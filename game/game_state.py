@@ -96,9 +96,9 @@ class GameState(object):
         elif drc == Drc.B_br or drc == Drc.W_fl:
             return np.array([-1,-1])
         elif drc == Drc.B_r or drc == Drc.W_l:
-            return np.array([-1,0])
+            return np.array([0,1])
         elif drc == Drc.B_l or drc == Drc.W_r:
-            return np.array([1,0])
+            return np.array([0,-1])
         elif drc == Drc.B_f2:
             return np.array([-2,0])
         elif drc == Drc.W_f2:

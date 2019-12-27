@@ -8,7 +8,7 @@ class TestGameState(unittest.TestCase):
     def setUp(self):
         self.gs = GameState()
 
-    def test_reverse(self):
+    def test_reverse_horizontal(self):
         self.gs.board = np.array([
             [0] * 5,
             [-1, 1, 0, 1, -1],
@@ -42,6 +42,26 @@ class TestGameState(unittest.TestCase):
                 [0] * 5
             ])).all()
         )
-
-if __name__ == '__main__':
-    unittest.main()
+    
+    def test_reverse_vertical_and_diagonal(self):
+        self.gs.board = np.array([
+            [0] * 5,
+            [0] * 5,
+            [1, -1, 1, 0, 0],
+            [-1, -1, -1, -1, -1],
+            [0, 1, 0, 0, 0],
+            [0] * 5,
+            [0] * 5
+        ])
+        self.gs.move(4, 1, Drc.B_r)
+        self.assertTrue(
+            (self.gs.board == np.array([
+                [0] * 5,
+                [0] * 5,
+                [1, -1, 1, 0, 0],
+                [-1, 1, 1, -1, -1],
+                [0, 0, 1, 0, 0],
+                [0] * 5,
+                [0] * 5
+                ])).all()
+        )
