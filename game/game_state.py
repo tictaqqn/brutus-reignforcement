@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum, Flag, auto
+from enum import Enum, auto
 import numpy as np
 from .errors import *
 
