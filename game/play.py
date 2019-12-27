@@ -1,6 +1,7 @@
 from .errors import *
 from .game_state import Drc, GameState
 
+
 def keys_to_drc(key, turn):
     if key == 'q':
         drcs = Drc.B_fl, Drc.W_br
@@ -22,8 +23,9 @@ def keys_to_drc(key, turn):
         drcs = Drc.B_f2, None
     elif key == 'xx':
         drcs = None, Drc.W_f2
-    
+
     return drcs[0] if turn == 1 else drcs[1]
+
 
 def play(gs=None, logs=None):
     if gs is None:

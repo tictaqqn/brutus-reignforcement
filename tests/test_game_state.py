@@ -42,7 +42,7 @@ class TestGameState(unittest.TestCase):
                 [0] * 5
             ])).all()
         )
-    
+
     def test_reverse_vertical_and_diagonal(self):
         self.gs.board = np.array([
             [0] * 5,
@@ -63,5 +63,5 @@ class TestGameState(unittest.TestCase):
                 [0, 0, 1, 0, 0],
                 [0] * 5,
                 [0] * 5
-                ])).all()
+            ])).all()
         )
