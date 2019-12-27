@@ -53,7 +53,8 @@ class TestGameState(unittest.TestCase):
             [0] * 5,
             [0] * 5
         ])
-        self.gs.move(4, 1, Drc.B_r)
+        state = self.gs.move(4, 1, Drc.B_r)
+        self.assertIsNone(state)
         self.assertTrue(
             (self.gs.board == np.array([
                 [0] * 5,
@@ -65,3 +66,29 @@ class TestGameState(unittest.TestCase):
                 [0] * 5
             ])).all()
         )
+
+    def test_win_of_plus_no_enemies(self):
+        self.gs.board = np.array([
+            [0] * 5,
+            [0] * 5,
+            [1, 1, 1, 0, 0],
+            [1, -1, -1, 1, 1],
+            [0, 1, 0, 0, 0],
+            [0] * 5,
+            [0] * 5
+        ])
+        state = self.gs.move(4, 1, Drc.B_r)
+        self.assertEqual(state, 1)
+
+    def test_win_of_minus_checkmate(self):
+        self.gs.board = np.array([
+            [0] * 5,
+            [0] * 5,
+            [1, 1, 1, 0, 0],
+            [1, -1, -1, 1, 1],
+            [0, 1, 0, 0, 0],
+            [0] * 5,
+            [1, -1, 2, 1, 1]
+        ])
+        state = self.gs.move(4, 1, Drc.B_r)
+        self.assertEqual(state, -1)
