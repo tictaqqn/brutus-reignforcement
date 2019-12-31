@@ -48,7 +48,7 @@ class GameState(object):
     def boundary_check(self, ij) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
-    def move(self, i, j, drc):
+    def move(self, i: int, j: int, drc: Drc):
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = self.directionize(drc)
@@ -58,6 +58,24 @@ class GameState(object):
         if self.board[nxt[0], nxt[1]] != 0:
             raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
         if drc == Drc.B_f2 or drc == Drc.W_f2:
+            between = np.array([i, j]) + direction // 2
+            if self.board[between[0], between[1]] == self.turn:
+                raise ChoiceOfMovementError(f"間に自コマあり {between}")
+        self.board[i, j] = 0
+        self.board[nxt[0], nxt[1]] = self.turn
+        self.reverse(nxt)
+        return self.turn_change()
+
+    def move_d_vec(self, i: int, j: int, direction: np.array):
+        if self.board[i, j] != self.turn:
+            raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
+        # direction = self.directionize(drc)
+        nxt = np.array([i, j]) + direction
+        if not self.boundary_check(nxt):
+            raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
+        if self.board[nxt[0], nxt[1]] != 0:
+            raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
+        if direction[1] == 2 or direction[1] == -2:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")

@@ -1,3 +1,4 @@
+from typing import Optional
 from logging import getLogger
 import numpy as np
 import wx
@@ -23,7 +24,7 @@ def notify(caption, message):
 
 class Frame(wx.Frame):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.gs = GameState()
         self.logs = []
         self.piece_selected = False
@@ -57,6 +58,8 @@ class Frame(wx.Frame):
         w, h = self.panel.GetSize()
 
         if not self.piece_selected:
+            # TODO: 自分の駒でないときに選択できないようにする
+            # TODO: 選択したコマを強調する(refresh関数内)
             self.piece_selected = True
             self.selected_x = int(event_x / (w / 5))
             self.selected_y = int(event_y / (h / 7))
@@ -69,27 +72,32 @@ class Frame(wx.Frame):
             return
 
         if not (-1 <= x - self.selected_x <= 1 and -2 <= y - self.selected_y <= 2):
+            self.piece_selected = False
             return
 
-        d = np.array([x - self.selected_x, y - self.selected_y])
+        d = np.array([y - self.selected_y, x - self.selected_x])
         print(d)
-        # try:
-        #     state = gs.move(y, x, drc)
-        # except GameError as e:
-        #     print(e)
-        #     print("入力が不正です。もう一度入力してください。")
-        #     return
-        # self.logs.append((i, j, d))
-        # if state == 1:
-        #     print(gs)
-        #     print("先手勝利")
-        #     return gs, logs
-        # elif state == -1:
-        #     print(gs)
-        #     print("後手勝利")
-        #     return gs, logs
+        try:
+            state = self.gs.move_d_vec(self.selected_y, self.selected_x, d)
+        except GameError as e:
+            print(e)
+            print("入力が不正です。もう一度入力してください。")
+            self.piece_selected = False
+            return
+        print(self.gs)
+        self.logs.append((y, x, d))
+        self.check_game_end(state)
         self.piece_selected = False
+        self.panel.Refresh()
+        
 
+    def check_game_end(self, state: Optional[int]):
+        if state == 1:
+            print(gs)
+            print("先手勝利")
+        elif state == -1:
+            print(gs)
+            print("後手勝利")
 
     def refresh(self, event):
         dc = wx.PaintDC(self.panel)
