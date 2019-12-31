@@ -67,18 +67,17 @@ class Frame(wx.Frame):
         # stones
         brushes = {
             -2: wx.Brush("white"),
-            -1: wx.Brush("white"), 
+            -1: wx.Brush("white"),
             1: wx.Brush("black"),
             2: wx.Brush("black"),
         }
-        
+
         for i in range(7):
             for j in range(5):
                 c = self.gs.board[i, j]
                 if c != 0:
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
-
 
 
 if __name__ == "__main__":
