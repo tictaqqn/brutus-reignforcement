@@ -99,10 +99,19 @@ class Frame(wx.Frame):
             print(self.gs)
             print("先手勝利")
             self.finished = True
+            self.SetStatusText("先手勝利")
         elif state == -1:
             print(self.gs)
             print("後手勝利")
             self.finished = True
+            self.SetStatusText("後手勝利")
+
+
+    def update_status_bar(self):
+        if self.finished:
+            return
+        msg = "current player is " + ["White", "Black"][self.gs.turn == 1]
+        self.SetStatusText(msg)
 
 
     def refresh(self, event):
@@ -136,6 +145,7 @@ class Frame(wx.Frame):
                 if c != 0:
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
+        self.update_status_bar()
 
     def handle_quit(self, event: CommandEvent):
         self.Close()
