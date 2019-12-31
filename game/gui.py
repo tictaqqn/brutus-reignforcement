@@ -84,7 +84,7 @@ class Frame(wx.Frame):
             print("入力が不正です。もう一度入力してください。")
             self.piece_selected = False
             return
-        print(self.gs)
+        # print(self.gs)
         self.logs.append((y, x, d))
         self.check_game_end(state)
         self.piece_selected = False
@@ -93,10 +93,10 @@ class Frame(wx.Frame):
 
     def check_game_end(self, state: Optional[int]):
         if state == 1:
-            print(gs)
+            print(self.gs)
             print("先手勝利")
         elif state == -1:
-            print(gs)
+            print(self.gs)
             print("後手勝利")
 
     def refresh(self, event):

@@ -67,6 +67,8 @@ class GameState(object):
         return self.turn_change()
 
     def move_d_vec(self, i: int, j: int, direction: np.array):
+        if abs(direction[0]) == 2 and direction[1] != 0:
+            raise ChoiceOfMovementError(f"斜め移動不可{direction}")
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         # direction = self.directionize(drc)
@@ -75,7 +77,7 @@ class GameState(object):
             raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
         if self.board[nxt[0], nxt[1]] != 0:
             raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
-        if direction[1] == 2 or direction[1] == -2:
+        if abs(direction[0]) == 2:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
