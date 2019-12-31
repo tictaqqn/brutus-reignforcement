@@ -28,6 +28,7 @@ class Frame(wx.Frame):
         self.gs = GameState()
         self.logs = []
         self.piece_selected = False
+        self.finished = False
         window_title = 'Brutus'
         window_size = (250, 400)
         wx.Frame.__init__(self, None, -1, window_title, size=window_size)
@@ -54,6 +55,8 @@ class Frame(wx.Frame):
         self.CreateStatusBar()
 
     def try_move(self, event):
+        if self.finished:
+            return
         event_x, event_y = event.GetX(), event.GetY()
         w, h = self.panel.GetSize()
 
@@ -95,9 +98,12 @@ class Frame(wx.Frame):
         if state == 1:
             print(self.gs)
             print("先手勝利")
+            self.finished = True
         elif state == -1:
             print(self.gs)
             print("後手勝利")
+            self.finished = True
+
 
     def refresh(self, event):
         dc = wx.PaintDC(self.panel)
