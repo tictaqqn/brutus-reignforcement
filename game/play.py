@@ -62,3 +62,6 @@ def play(gs=None, logs=None):
             print(gs)
             print("後手勝利")
             return gs, logs
+
+if __name__ == "__main__":
+    play()
