@@ -97,7 +97,7 @@ class GameState(object):
                 return 1  # 先手勝利
         else:
             if self.board[0, 1] == 1 or self.board[0, 3] == 1 or \
-                    self.board[0, 2] == 1:
+                    self.board[1, 2] == 1:
                 return 1  # 先手勝利
             elif (self.board != 1).all():
                 return -1  # 後手勝利
