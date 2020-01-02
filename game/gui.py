@@ -101,7 +101,6 @@ class Frame(wx.Frame):
         self.check_game_end(state)
         self.piece_selected = False
         self.panel.Refresh()
-        
 
     def check_game_end(self, state: Optional[int]):
         if state == 1:
@@ -117,14 +116,11 @@ class Frame(wx.Frame):
             self.SetStatusText("後手勝利")
             print(self.logs)
 
-
-
     def update_status_bar(self):
         if self.finished:
             return
         msg = "current player is " + ["White", "Black"][self.gs.turn == 1]
         self.SetStatusText(msg)
-
 
     def refresh(self, event):
         dc = wx.PaintDC(self.panel)
