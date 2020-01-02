@@ -76,16 +76,19 @@ class Frame(wx.Frame):
             if self.gs.board[y, x] == self.gs.turn:
                 self.selected_x, self.selected_y = x, y
                 self.piece_selected = True
+                self.panel.Refresh()
             return
 
         x = int(event_x / (w / 5))
         y = int(event_y / (h / 7))
         if x == self.selected_x and y == self.selected_y:
             self.piece_selected = False
+            self.panel.Refresh()
             return
 
         if not (-1 <= x - self.selected_x <= 1 and -2 <= y - self.selected_y <= 2):
             self.piece_selected = False
+            self.panel.Refresh()
             return
 
         d = np.array([y - self.selected_y, x - self.selected_x])
@@ -96,6 +99,7 @@ class Frame(wx.Frame):
             print(e)
             print("入力が不正です。もう一度入力してください。")
             self.piece_selected = False
+            self.panel.Refresh()
             return
         # print(self.gs)
         self.logs.append((y, x, d))
@@ -154,6 +158,9 @@ class Frame(wx.Frame):
                 if c != 0:
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
+                    if self.piece_selected and j == self.selected_x and i == self.selected_y:
+                        dc.SetBrush(wx.Brush("grey"))
+                        dc.DrawEllipse(j * px + px/4, i * py + py/4, px/2, py/2)
         self.update_status_bar()
 
     def handle_quit(self, event: CommandEvent):
