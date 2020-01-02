@@ -70,11 +70,12 @@ class Frame(wx.Frame):
         w, h = self.panel.GetSize()
 
         if not self.piece_selected:
-            # TODO: 自分の駒でないときに選択できないようにする
             # TODO: 選択したコマを強調する(refresh関数内)
-            self.piece_selected = True
-            self.selected_x = int(event_x / (w / 5))
-            self.selected_y = int(event_y / (h / 7))
+            x = int(event_x / (w / 5))
+            y = int(event_y / (h / 7))
+            if self.gs.board[y, x] == self.gs.turn:
+                self.selected_x, self.selected_y = x, y
+                self.piece_selected = True
             return
 
         x = int(event_x / (w / 5))
