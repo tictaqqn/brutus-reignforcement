@@ -38,21 +38,30 @@ class Frame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.refresh)
 
         menu = wx.Menu()
-        menu.Append(1, u"New Game(Black)")
-        menu.Append(2, u"New Game(White)")
+        menu.Append(1, u"New Game")
+        # menu.Append(2, u"New Game(White)")
         menu.AppendSeparator()
-        menu.Append(5, u"Flip Vertical")
-        menu.Append(6, u"Show/Hide Player evaluation")
-        menu.AppendSeparator()
+        # menu.Append(5, u"Flip Vertical")
+        # menu.Append(6, u"Show/Hide Player evaluation")
+        # menu.AppendSeparator()
         menu.Append(9, u"quit")
         menu_bar = wx.MenuBar()
         menu_bar.Append(menu, u"menu")
         self.SetMenuBar(menu_bar)
 
+        self.Bind(wx.EVT_MENU, self.new_game, id=1)
         self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
 
         # status bar
         self.CreateStatusBar()
+
+    def new_game(self, event):
+        print(self.logs)
+        self.gs = GameState()
+        self.logs = []
+        self.finished = False
+        self.piece_selected = False
+        self.panel.Refresh()
 
     def try_move(self, event):
         if self.finished:
@@ -100,11 +109,14 @@ class Frame(wx.Frame):
             print("先手勝利")
             self.finished = True
             self.SetStatusText("先手勝利")
+            print(self.logs)
         elif state == -1:
             print(self.gs)
             print("後手勝利")
             self.finished = True
             self.SetStatusText("後手勝利")
+            print(self.logs)
+
 
 
     def update_status_bar(self):
