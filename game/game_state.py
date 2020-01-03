@@ -39,7 +39,7 @@ class GameState:
             [0] * 5,
             [0, 1, 0, 1, 0],
             [1, 1, 2, 1, 1]
-        ], dtype=int)
+        ], dtype=np.int8)
         self.turn = 1  # +が先攻
 
     def __repr__(self):
