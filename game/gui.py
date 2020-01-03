@@ -162,7 +162,8 @@ class Frame(wx.Frame):
                     # TODO: デザイン改善の余地
                     if self.piece_selected and j == self.selected_x and i == self.selected_y:
                         dc.SetBrush(wx.Brush("grey"))
-                        dc.DrawRectangle(j * px + px/4, i * py + py/4, px/2, py/2)
+                        dc.DrawRectangle(j * px + px/4, i *
+                                         py + py/4, px/2, py/2)
         self.update_status_bar()
 
     def handle_quit(self, event: CommandEvent):
