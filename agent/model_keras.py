@@ -4,7 +4,6 @@ import os
 from logging import getLogger
 # noinspection PyPep8Naming
 import keras.backend as K
-
 from keras.engine.topology import Input
 from keras.engine.training import Model
 from keras.layers.convolutional import Conv2D
@@ -20,7 +19,7 @@ from .config import Config
 logger = getLogger(__name__)
 
 
-class ReversiModel:
+class BrutusModel:
     def __init__(self, config: Config):
         self.config = config
         self.model = None  # type: Model
@@ -41,20 +40,25 @@ class ReversiModel:
 
         res_out = x
         # for policy output
-        x = Conv2D(filters=2, kernel_size=1, data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(res_out)
+        x = Conv2D(filters=2, kernel_size=1, data_format="channels_first",
+                   kernel_regularizer=l2(mc.l2_reg))(res_out)
         x = BatchNormalization(axis=1)(x)
         x = Activation("relu")(x)
         x = Flatten()(x)
         # no output for 'pass'
-        policy_out = Dense(7*5*9, kernel_regularizer=l2(mc.l2_reg), activation="softmax", name="policy_out")(x)
+        policy_out = Dense(7*5*9, kernel_regularizer=l2(mc.l2_reg),
+                           activation="softmax", name="policy_out")(x)
 
         # for value output
-        x = Conv2D(filters=1, kernel_size=1, data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(res_out)
+        x = Conv2D(filters=1, kernel_size=1, data_format="channels_first",
+                   kernel_regularizer=l2(mc.l2_reg))(res_out)
         x = BatchNormalization(axis=1)(x)
         x = Activation("relu")(x)
         x = Flatten()(x)
-        x = Dense(mc.value_fc_size, kernel_regularizer=l2(mc.l2_reg), activation="relu")(x)
-        value_out = Dense(1, kernel_regularizer=l2(mc.l2_reg), activation="tanh", name="value_out")(x)
+        x = Dense(mc.value_fc_size, kernel_regularizer=l2(
+            mc.l2_reg), activation="relu")(x)
+        value_out = Dense(1, kernel_regularizer=l2(mc.l2_reg),
+                          activation="tanh", name="value_out")(x)
 
         self.model = Model(in_x, [policy_out, value_out], name="brutus_model")
 
@@ -90,7 +94,8 @@ class ReversiModel:
             logger.debug(f"loaded model digest = {self.digest}")
             return True
         else:
-            logger.debug(f"model files does not exist at {config_path} and {weight_path}")
+            logger.debug(
+                f"model files does not exist at {config_path} and {weight_path}")
             return False
 
     def save(self, config_path, weight_path):
