@@ -70,7 +70,6 @@ class Frame(wx.Frame):
         w, h = self.panel.GetSize()
 
         if not self.piece_selected:
-            # TODO: 選択したコマを強調する(refresh関数内)
             x = int(event_x / (w / 5))
             y = int(event_y / (h / 7))
             if self.gs.board[y, x] == self.gs.turn:
@@ -124,7 +123,8 @@ class Frame(wx.Frame):
     def update_status_bar(self):
         if self.finished:
             return
-        msg = "current player is " + ["White", "Black"][self.gs.turn == 1]
+        msg = "current player is " + (
+            "Black" if self.gs.turn == 1 else "White")
         self.SetStatusText(msg)
 
     def refresh(self, event):
@@ -145,6 +145,7 @@ class Frame(wx.Frame):
         dc.DrawLine(0, h - 1, w - 1, h - 1)
 
         # stones
+        # TODO: キングのデザイン
         brushes = {
             -2: wx.Brush("white"),
             -1: wx.Brush("white"),
