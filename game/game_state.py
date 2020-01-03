@@ -25,7 +25,7 @@ class Drc(Enum):
     W_bl = auto()
 
 
-class GameState(object):
+class GameState:
     DIRECTIONS = list(map(np.array, ([-1, 1], [0, 1], [1, 1],
                                      [-1, 0], [1, 0],
                                      [-1, -1], [0, -1], [1, -1])))
