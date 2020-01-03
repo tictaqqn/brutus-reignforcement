@@ -85,7 +85,8 @@ class Frame(wx.Frame):
             self.panel.Refresh()
             return
 
-        if not (-1 <= x - self.selected_x <= 1 and -2 <= y - self.selected_y <= 2):
+        if not (-1 <= x - self.selected_x <= 1 and
+                -2 <= y - self.selected_y <= 2):
             self.piece_selected = False
             self.panel.Refresh()
             return
@@ -160,10 +161,11 @@ class Frame(wx.Frame):
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
                     # TODO: デザイン改善の余地
-                    if self.piece_selected and j == self.selected_x and i == self.selected_y:
+                    if self.piece_selected and \
+                            j == self.selected_x and i == self.selected_y:
                         dc.SetBrush(wx.Brush("grey"))
-                        dc.DrawRectangle(j * px + px/4, i *
-                                         py + py/4, px/2, py/2)
+                        dc.DrawRectangle(j * px + px/4,
+                                         i * py + py/4, px/2, py/2)
         self.update_status_bar()
 
     def handle_quit(self, event: CommandEvent):
