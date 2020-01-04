@@ -147,18 +147,39 @@ class GameState:
                     break
                 pos += dirc
 
-    def valid_choice(self, ij, drc) -> bool:
-        pass
+    def valid_choice(self, i, j, drc) -> bool:
+        if self.board[i, j] != self.turn:
+            # raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
+            return False
+        direction = self.directionize(drc)
+        nxt = np.array([i, j]) + direction
+        if not self.boundary_check(nxt):
+            # raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
+            return False
+        if self.board[nxt[0], nxt[1]] != 0:
+            # raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
+            return False
+        if drc == Drc.B_f2 or drc == Drc.W_f2:
+            between = np.array([i, j]) + direction // 2
+            if self.board[between[0], between[1]] == self.turn:
+                # raise ChoiceOfMovementError(f"間に自コマあり {between}")
+                return False
+        return True
 
     def random_play(self):
         while True:
-            n_stones = np.sum(self.board == self.turn)
-            r = random.randint(0, n_stones - 1)
-            ij = self.n_th_stone_place(r, self.turn)
+            i = random.randint(0, 7-1)
+            j = random.randint(0, 5-1)
+            # if self.board[i, j] != self.turn:
+            #     continue
             drc = random.randint(0, 8)
-            if self.valid_choice(ij, drc):
-                self.move(ij[0], ij[1], drc)
+            try:
+                self.move(i, j, drc)
+            except:
+                continue
+            else:  # うまくいったとき
                 break
-        
-    def n_th_stone_place(self, n, turn) -> np.ndarray:
-        pass
+
+            # if self.valid_choice(i, j, drc):
+            #     self.move(i, j, drc)
+            #     break
