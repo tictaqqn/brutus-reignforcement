@@ -175,7 +175,7 @@ class GameState:
             drc = random.randint(0, 8)
             try:
                 self.move(i, j, drc)
-            except:
+            except GameError:
                 continue
             else:  # うまくいったとき
                 break
