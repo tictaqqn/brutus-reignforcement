@@ -31,7 +31,7 @@ class GameState:
                                      [-1, 0], [1, 0],
                                      [-1, -1], [0, -1], [1, -1])))
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.board = np.array([
             [-1, -1, -2, -1, -1],
             [0, -1, 0, -1, 0],
@@ -67,7 +67,7 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def move_d_vec(self, i: int, j: int, direction: np.array):
+    def move_d_vec(self, i: int, j: int, direction: np.array) -> int:
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
@@ -89,7 +89,7 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def turn_change(self):
+    def turn_change(self) -> int:
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
@@ -105,7 +105,7 @@ class GameState:
         self.turn *= -1
         return None
 
-    def directionize(self, drc: Drc):
+    def directionize(self, drc: Drc) -> np.ndarray:
         if drc == Drc.B_f or drc == Drc.W_b:
             return np.array([-1, 0])
         elif drc == Drc.W_f or drc == Drc.B_b:
@@ -129,7 +129,7 @@ class GameState:
         else:
             raise ValueError("Never reaches here")
 
-    def reverse(self, ij: np.ndarray):
+    def reverse(self, ij: np.ndarray) -> None:
         # print(self.DIRECTIONS)
         for dirc in self.DIRECTIONS:
             pos = ij + dirc
@@ -147,5 +147,18 @@ class GameState:
                     break
                 pos += dirc
 
+    def valid_choice(self, ij, drc) -> bool:
+        pass
+
     def random_play(self):
+        while True:
+            n_stones = np.sum(self.board == self.turn)
+            r = random.randint(0, n_stones - 1)
+            ij = self.n_th_stone_place(r, self.turn)
+            drc = random.randint(0, 8)
+            if self.valid_choice(ij, drc):
+                self.move(ij[0], ij[1], drc)
+                break
+        
+    def n_th_stone_place(self, n, turn) -> np.ndarray:
         pass
