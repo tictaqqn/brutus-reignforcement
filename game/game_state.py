@@ -1,4 +1,5 @@
 from enum import Enum, auto
+import random
 import numpy as np
 from .errors import *
 
@@ -45,7 +46,7 @@ class GameState:
     def __repr__(self):
         return str(self.board)
 
-    def boundary_check(self, ij) -> bool:
+    def boundary_check(self, ij: 'array_like') -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
     def move(self, i: int, j: int, drc: Drc):
@@ -104,7 +105,7 @@ class GameState:
         self.turn *= -1
         return None
 
-    def directionize(self, drc):
+    def directionize(self, drc: Drc):
         if drc == Drc.B_f or drc == Drc.W_b:
             return np.array([-1, 0])
         elif drc == Drc.W_f or drc == Drc.B_b:
@@ -126,9 +127,9 @@ class GameState:
         elif drc == Drc.W_f2:
             return np.array([2, 0])
         else:
-            raise GameError("Never reaches here")
+            raise ValueError("Never reaches here")
 
-    def reverse(self, ij):
+    def reverse(self, ij: np.ndarray):
         # print(self.DIRECTIONS)
         for dirc in self.DIRECTIONS:
             pos = ij + dirc
@@ -145,3 +146,6 @@ class GameState:
                         pos -= dirc
                     break
                 pos += dirc
+
+    def random_play(self):
+        pass
