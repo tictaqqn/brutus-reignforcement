@@ -4,26 +4,26 @@ import numpy as np
 from .errors import *
 
 
-class Drc(Enum):
-    B_f = auto()
-    B_f2 = auto()
-    B_b = auto()
-    B_r = auto()
-    B_l = auto()
-    B_fr = auto()
-    B_fl = auto()
-    B_br = auto()
-    B_bl = auto()
+class Drc(IntEnum):
+    B_f = 0
+    B_f2 = 1
+    B_b = 2
+    B_r = 3
+    B_l = 4
+    B_fr = 5
+    B_fl = 6
+    B_br = 7
+    B_bl = 8
 
-    W_f = auto()
-    W_f2 = auto()
-    W_b = auto()
-    W_r = auto()
-    W_l = auto()
-    W_fr = auto()
-    W_fl = auto()
-    W_br = auto()
-    W_bl = auto()
+    W_f = 9
+    W_f2 = 10
+    W_b = 11
+    W_r = 12
+    W_l = 13
+    W_fr = 14
+    W_fl = 15
+    W_br = 16
+    W_bl = 17
 
 
 class GameState:
@@ -173,6 +173,8 @@ class GameState:
             # if self.board[i, j] != self.turn:
             #     continue
             drc = random.randint(0, 8)
+            if self.turn == -1:
+                drc += 9
             try:
                 self.move(i, j, drc)
             except GameError:
