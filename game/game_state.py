@@ -1,3 +1,4 @@
+from typing import *
 from enum import IntEnum, auto
 import random
 import numpy as np
@@ -46,7 +47,7 @@ class GameState:
     def __repr__(self):
         return str(self.board)
 
-    def boundary_check(self, ij: 'array_like') -> bool:
+    def boundary_check(self, ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
     def move(self, i: int, j: int, drc: Drc):
@@ -166,7 +167,10 @@ class GameState:
                 return False
         return True
 
-    def random_play(self):
+    def random_play(self, decided_pb=1):
+        if random.random() < decided_pb:
+            if self.prior_checkmate():
+                return
         while True:
             i = random.randint(0, 7-1)
             j = random.randint(0, 5-1)
@@ -185,3 +189,35 @@ class GameState:
             # if self.valid_choice(i, j, drc):
             #     self.move(i, j, drc)
             #     break
+
+    def prior_checkmate(self) -> bool:
+        if self.turn == 1:
+            near_king = [(0, 1), (0, 3), (1, 2)]
+        else:
+            near_king = [(6, 1), (6, 3), (5, 2)]
+        random.shuffle(near_king)
+        for i0, j0 in near_king:
+            if self._prior_checkmate_each(i0, j0):
+                return True
+        return False
+
+    def _prior_checkmate_each(self, i0, j0) -> bool:
+        d = np.array([i0, j0])
+        ijs = self.near(d)
+        for i, j in ijs:
+            try:
+                self.move_d_vec(i, j, d)
+            except GameError:
+                pass
+            else:
+                return True
+        return False
+
+    def near(self, ij) -> Iterable[Tuple[int, int]]:
+        directions = random.sample(self.DIRECTIONS,
+                                   len(self.DIRECTIONS))
+        for d in directions:
+            p = ij + d
+            if self.boundary_check(p) and \
+                    self.board[p[0], p[1]] == self.turn:
+                yield tuple(p)
