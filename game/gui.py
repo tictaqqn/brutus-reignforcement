@@ -146,7 +146,7 @@ class Frame(wx.Frame):
         self.timer.Stop()
         self.touch_disabled = False
 
-    def check_game_end(self, state: Optional[int]):
+    def check_game_end(self, state: int):
         if state == 1:
             print(self.gs)
             print("先手勝利")

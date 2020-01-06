@@ -51,7 +51,7 @@ class GameState:
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
-    def move(self, i: int, j: int, drc: Drc):
+    def move(self, i: int, j: int, drc: Drc) -> int:
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = self.directionize(drc)
@@ -91,7 +91,7 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def turn_change(self) -> Optional[int]:
+    def turn_change(self) -> int:
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
@@ -105,7 +105,7 @@ class GameState:
             elif (self.board != 1).all():
                 return -1  # 後手勝利
         self.turn *= -1
-        return None
+        return 0
 
     @staticmethod
     def directionize(drc: Drc) -> np.ndarray:
@@ -169,7 +169,7 @@ class GameState:
                 return False
         return True
 
-    def random_play(self, decided_pb=1) -> Optional[int]:
+    def random_play(self, decided_pb=1) -> int:
         if random.random() < decided_pb:
             moved, state = self.prior_checkmate()
             if moved:
