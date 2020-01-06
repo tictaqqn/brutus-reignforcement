@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import IntEnum, auto
 import random
 import numpy as np
 from .errors import *
