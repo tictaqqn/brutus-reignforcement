@@ -209,9 +209,9 @@ class GameState:
             return False, None
         d = np.array([i0, j0])
         ijs = self.near(d)
-        for i, j in ijs:
+        for ij in ijs:
             try:
-                state = self.move_d_vec(i, j, d - np.array([i, j]))
+                state = self.move_d_vec(ij[0], ij[1], d - ij)
             except GameError:
                 pass
             else:
@@ -225,4 +225,4 @@ class GameState:
             p = ij + d
             if self.boundary_check(p) and \
                     self.board[p[0], p[1]] == self.turn:
-                yield tuple(p)
+                yield p
