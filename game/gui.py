@@ -47,9 +47,9 @@ class Frame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.refresh)
 
         menu = wx.Menu()
-        menu.Append(1, u"New Game Humans")
-        menu.Append(2, u"New Game (Black) vs random")
-        menu.Append(3, u"New Game (White) vs random")
+        menu.Append(GameMode.humans_play, u"New Game Humans")
+        menu.Append(GameMode.black_human_vs_random, u"New Game (Black) vs random")
+        menu.Append(GameMode.white_human_vs_random, u"New Game (White) vs random")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
@@ -128,7 +128,7 @@ class Frame(wx.Frame):
         self.panel.Refresh()
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
-            time.sleep(2)
+            time.sleep(1)
             self.gs.random_play()
             self.panel.Refresh()
 
