@@ -37,6 +37,7 @@ class Frame(wx.Frame):
         self.logs = []
         self.piece_selected = False
         self.finished = False
+        self.touch_disabled = False
         self.game_mode = GameMode.humans_play
         window_title = 'Brutus'
         window_size = (250, 400)
@@ -45,6 +46,9 @@ class Frame(wx.Frame):
         self.panel = wx.Panel(self)
         self.panel.Bind(wx.EVT_LEFT_DOWN, self.try_move)
         self.panel.Bind(wx.EVT_PAINT, self.refresh)
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
 
         menu = wx.Menu()
         menu.Append(GameMode.humans_play, u"New Game Humans")
@@ -75,6 +79,7 @@ class Frame(wx.Frame):
         self.gs = GameState()
         self.logs = []
         self.finished = False
+        self.touch_disabled = False
         self.piece_selected = False
         if self.game_mode == GameMode.humans_play or \
             self.game_mode == GameMode.black_human_vs_random:
@@ -84,7 +89,7 @@ class Frame(wx.Frame):
             self.panel.Refresh()
 
     def try_move(self, event):
-        if self.finished:
+        if self.finished or self.touch_disabled:
             return
         event_x, event_y = event.GetX(), event.GetY()
         w, h = self.panel.GetSize()
@@ -128,9 +133,16 @@ class Frame(wx.Frame):
         self.panel.Refresh()
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
-            time.sleep(1)
-            self.gs.random_play()
-            self.panel.Refresh()
+            self.timer.Start(1000)
+            self.touch_disabled = True
+            # self.gs.random_play()
+            # self.panel.Refresh()
+
+    def OnTimer(self, event):
+        self.gs.random_play()
+        self.panel.Refresh()
+        self.timer.Stop()
+        self.touch_disabled = False
 
     def check_game_end(self, state: Optional[int]):
         if state == 1:
