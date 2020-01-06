@@ -1,5 +1,7 @@
 from typing import Optional
+from enum import IntEnum
 from logging import getLogger
+import time
 import numpy as np
 import wx
 from wx.core import CommandEvent
@@ -22,6 +24,12 @@ def notify(caption, message):
     dialog.Destroy()
 
 
+class GameMode(IntEnum):
+    humans_play = 1
+    black_human_vs_random = 2
+    white_human_vs_random = 3
+
+
 class Frame(wx.Frame):
 
     def __init__(self) -> None:
@@ -29,6 +37,7 @@ class Frame(wx.Frame):
         self.logs = []
         self.piece_selected = False
         self.finished = False
+        self.game_mode = GameMode.humans_play
         window_title = 'Brutus'
         window_size = (250, 400)
         wx.Frame.__init__(self, None, -1, window_title, size=window_size)
@@ -38,8 +47,9 @@ class Frame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.refresh)
 
         menu = wx.Menu()
-        menu.Append(1, u"New Game")
-        # menu.Append(2, u"New Game(White)")
+        menu.Append(1, u"New Game Humans")
+        menu.Append(2, u"New Game (Black) vs random")
+        menu.Append(3, u"New Game (White) vs random")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
@@ -49,19 +59,29 @@ class Frame(wx.Frame):
         menu_bar.Append(menu, u"menu")
         self.SetMenuBar(menu_bar)
 
-        self.Bind(wx.EVT_MENU, self.new_game, id=1)
+        self.Bind(wx.EVT_MENU, self.handle_new_game, id=GameMode.humans_play)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.black_human_vs_random)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.white_human_vs_random)
         self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
 
         # status bar
         self.CreateStatusBar()
 
-    def new_game(self, event):
+    def handle_new_game(self, event):
+        self.game_mode = event.GetId()
         print(self.logs)
         self.gs = GameState()
         self.logs = []
         self.finished = False
         self.piece_selected = False
-        self.panel.Refresh()
+        if self.game_mode == GameMode.humans_play or \
+            self.game_mode == GameMode.black_human_vs_random:
+            self.panel.Refresh()
+        elif self.game_mode == GameMode.white_human_vs_random:
+            self.gs.random_play()
+            self.panel.Refresh()
 
     def try_move(self, event):
         if self.finished:
@@ -106,6 +126,11 @@ class Frame(wx.Frame):
         self.check_game_end(state)
         self.piece_selected = False
         self.panel.Refresh()
+        if self.game_mode == GameMode.black_human_vs_random or \
+                self.game_mode == GameMode.white_human_vs_random:
+            time.sleep(2)
+            self.gs.random_play()
+            self.panel.Refresh()
 
     def check_game_end(self, state: Optional[int]):
         if state == 1:
