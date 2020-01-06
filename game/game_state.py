@@ -205,6 +205,8 @@ class GameState:
         return False, None
 
     def _prior_checkmate_each(self, i0, j0) -> Tuple[bool, Optional[int]]:
+        if self.board[i0, j0] != 0: # i0, j0にそもそもいけない
+            return False, None
         d = np.array([i0, j0])
         ijs = self.near(d)
         for i, j in ijs:
