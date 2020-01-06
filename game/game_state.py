@@ -91,7 +91,7 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def turn_change(self) -> int:
+    def turn_change(self) -> Optional[int]:
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
