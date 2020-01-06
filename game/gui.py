@@ -139,7 +139,8 @@ class Frame(wx.Frame):
             # self.panel.Refresh()
 
     def OnTimer(self, event):
-        self.gs.random_play()
+        state = self.gs.random_play()
+        self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
         self.touch_disabled = False
