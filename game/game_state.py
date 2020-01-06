@@ -171,6 +171,7 @@ class GameState:
         if random.random() < decided_pb:
             moved, state = self.prior_checkmate()
             if moved:
+                # print('priority')
                 return state
         while True:
             i = random.randint(0, 7-1)
@@ -208,7 +209,7 @@ class GameState:
         ijs = self.near(d)
         for i, j in ijs:
             try:
-                state = self.move_d_vec(i, j, d)
+                state = self.move_d_vec(i, j, d - np.array([i, j]))
             except GameError:
                 pass
             else:
