@@ -47,7 +47,8 @@ class GameState:
     def __repr__(self):
         return str(self.board)
 
-    def boundary_check(self, ij: Union[Sequence[int], np.ndarray]) -> bool:
+    @staticmethod
+    def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
     def move(self, i: int, j: int, drc: Drc):
