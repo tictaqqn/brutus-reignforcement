@@ -52,8 +52,10 @@ class Frame(wx.Frame):
 
         menu = wx.Menu()
         menu.Append(GameMode.humans_play, u"New Game Humans")
-        menu.Append(GameMode.black_human_vs_random, u"New Game (Black) vs random")
-        menu.Append(GameMode.white_human_vs_random, u"New Game (White) vs random")
+        menu.Append(GameMode.black_human_vs_random,
+                    u"New Game (Black) vs random")
+        menu.Append(GameMode.white_human_vs_random,
+                    u"New Game (White) vs random")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
@@ -82,7 +84,7 @@ class Frame(wx.Frame):
         self.touch_disabled = False
         self.piece_selected = False
         if self.game_mode == GameMode.humans_play or \
-            self.game_mode == GameMode.black_human_vs_random:
+                self.game_mode == GameMode.black_human_vs_random:
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_random:
             self.gs.random_play()
@@ -133,7 +135,7 @@ class Frame(wx.Frame):
         self.panel.Refresh()
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
-            self.timer.Start(1000) # 1000ms後OnTimer()が反応
+            self.timer.Start(1000)  # 1000ms後OnTimer()が反応
             self.touch_disabled = True
             # self.gs.random_play()
             # self.panel.Refresh()

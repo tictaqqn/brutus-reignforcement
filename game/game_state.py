@@ -200,14 +200,14 @@ class GameState:
             near_king = [(6, 1), (6, 3), (5, 2)]
         random.shuffle(near_king)
         for i0, j0 in near_king:
-            moved, state =  self._prior_checkmate_each(i0, j0)
+            moved, state = self._prior_checkmate_each(i0, j0)
             if moved:
                 return True, state
         return False, None
 
     def _prior_checkmate_each(self, i0, j0) -> Tuple[bool, Optional[int]]:
         """i0, j0に行けるコマがあれば行かせる"""
-        if self.board[i0, j0] != 0: # i0, j0にそもそもいけない
+        if self.board[i0, j0] != 0:  # i0, j0にそもそもいけない
             return False, None
         d = np.array([i0, j0])
         ijs = self.near(d)
