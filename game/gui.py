@@ -133,7 +133,7 @@ class Frame(wx.Frame):
         self.panel.Refresh()
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
-            self.timer.Start(1000)
+            self.timer.Start(1000) # 1000ms後OnTimer()が反応
             self.touch_disabled = True
             # self.gs.random_play()
             # self.panel.Refresh()

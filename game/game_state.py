@@ -193,6 +193,7 @@ class GameState:
             #     break
 
     def prior_checkmate(self) -> Tuple[bool, Optional[int]]:
+        """優先的にチェックメイトを狙う"""
         if self.turn == 1:
             near_king = [(0, 1), (0, 3), (1, 2)]
         else:
@@ -205,6 +206,7 @@ class GameState:
         return False, None
 
     def _prior_checkmate_each(self, i0, j0) -> Tuple[bool, Optional[int]]:
+        """i0, j0に行けるコマがあれば行かせる"""
         if self.board[i0, j0] != 0: # i0, j0にそもそもいけない
             return False, None
         d = np.array([i0, j0])
@@ -219,6 +221,7 @@ class GameState:
         return False, None
 
     def near(self, ij) -> Iterable[Tuple[int, int]]:
+        """ijの近くにいるコマをyieldする"""
         directions = random.sample(self.DIRECTIONS,
                                    len(self.DIRECTIONS))
         for d in directions:
