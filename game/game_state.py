@@ -2,7 +2,7 @@ from typing import *
 from enum import IntEnum, auto
 import random
 import numpy as np
-from .errors import *
+from .errors import ChoiceOfMovementError, GameError
 
 
 class Drc(IntEnum):

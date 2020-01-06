@@ -1,11 +1,10 @@
 from typing import Optional
 from enum import IntEnum
 from logging import getLogger
-import time
 import numpy as np
 import wx
 from wx.core import CommandEvent
-from .errors import *
+from .errors import ChoiceOfMovementError, GameError
 from .game_state import GameState
 
 logger = getLogger(__name__)
