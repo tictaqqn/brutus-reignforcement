@@ -36,7 +36,7 @@ class Frame(wx.Frame):
         self.logs = []
         self.piece_selected = False
         self.finished = False
-        self.touch_disabled = False
+        self.CPU_thinking = False
         self.game_mode = GameMode.humans_play
         window_title = 'Brutus'
         window_size = (250, 400)
@@ -80,7 +80,7 @@ class Frame(wx.Frame):
         self.gs = GameState()
         self.logs = []
         self.finished = False
-        self.touch_disabled = False
+        self.CPU_thinking = False
         self.piece_selected = False
         if self.game_mode == GameMode.humans_play or \
                 self.game_mode == GameMode.black_human_vs_random:
@@ -90,7 +90,7 @@ class Frame(wx.Frame):
             self.panel.Refresh()
 
     def try_move(self, event):
-        if self.finished or self.touch_disabled:
+        if self.finished or self.CPU_thinking:
             return
         event_x, event_y = event.GetX(), event.GetY()
         w, h = self.panel.GetSize()
@@ -135,7 +135,7 @@ class Frame(wx.Frame):
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
             self.timer.Start(1000)  # 1000ms後OnTimer()が反応
-            self.touch_disabled = True
+            self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
 
@@ -144,7 +144,7 @@ class Frame(wx.Frame):
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
-        self.touch_disabled = False
+        self.CPU_thinking = False
 
     def check_game_end(self, state: int):
         if state == 1:
@@ -163,8 +163,11 @@ class Frame(wx.Frame):
     def update_status_bar(self):
         if self.finished:
             return
-        msg = "current player is " + (
-            "Black" if self.gs.turn == 1 else "White")
+        if self.CPU_thinking:
+            msg = "CPUが考慮中です"
+        else:
+            msg = "現在の手番: " + (
+                "黒" if self.gs.turn == 1 else "白")
         self.SetStatusText(msg)
 
     def refresh(self, event):
