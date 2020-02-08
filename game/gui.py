@@ -10,13 +10,13 @@ from .game_state import GameState, Winner
 logger = getLogger(__name__)
 
 
-def start():
+def start() -> None:
     app = wx.App()
     Frame().Show()
     app.MainLoop()
 
 
-def notify(caption, message):
+def notify(caption, message) -> None:
     dialog = wx.MessageDialog(None, message=message,
                               caption=caption, style=wx.OK)
     dialog.ShowModal()
@@ -74,7 +74,7 @@ class Frame(wx.Frame):
         # status bar
         self.CreateStatusBar()
 
-    def handle_new_game(self, event):
+    def handle_new_game(self, event) -> None:
         self.game_mode = event.GetId()
         print(self.logs)
         self.gs = GameState()
@@ -141,14 +141,14 @@ class Frame(wx.Frame):
             # self.gs.random_play()
             # self.panel.Refresh()
 
-    def OnTimer(self, event):
+    def OnTimer(self, event) -> None:
         state, _ = self.gs.random_play()
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
         self.CPU_thinking = False
 
-    def check_game_end(self, state: Winner):
+    def check_game_end(self, state: Winner) -> None:
         if state == Winner.plus:
             print(self.gs)
             print("先手勝利")
@@ -162,7 +162,7 @@ class Frame(wx.Frame):
             self.SetStatusText("後手勝利")
             print(self.logs)
 
-    def update_status_bar(self):
+    def update_status_bar(self) -> None:
         if self.finished:
             return
         if self.CPU_thinking:
@@ -172,7 +172,7 @@ class Frame(wx.Frame):
                 "黒" if self.gs.turn == 1 else "白")
         self.SetStatusText(msg)
 
-    def refresh(self, event):
+    def refresh(self, event) -> None:
         dc = wx.PaintDC(self.panel)
         # self.update_status_bar()
 
@@ -212,7 +212,7 @@ class Frame(wx.Frame):
                                          i * py + py/4, px/2, py/2)
         self.update_status_bar()
 
-    def handle_quit(self, event: CommandEvent):
+    def handle_quit(self, event: CommandEvent) -> None:
         self.Close()
 
 
