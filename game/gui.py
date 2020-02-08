@@ -11,8 +11,8 @@ from agent.config import Config
 
 logger = getLogger(__name__)
 
-MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-08-18-42-17-mainQN.json"
-WEIGHT_PATH = "results/001_QLearning/2020-02-08-18-42-17-mainQN.h5"
+MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-08-19-53-42-mainQN.json"
+WEIGHT_PATH = "results/001_QLearning/2020-02-08-19-53-42-mainQN.h5"
 
 
 def start() -> None:
