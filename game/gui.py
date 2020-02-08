@@ -154,7 +154,7 @@ class Frame(wx.Frame):
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random or \
                 self.game_mode == GameMode.black_human_vs_ML:
-            self.timer.Start(500)  # 1000ms後OnTimer()が反応
+            self.timer.Start(500)  # 500ms後OnTimer()が反応
             self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
