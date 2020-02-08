@@ -1,5 +1,5 @@
 from typing import *
-from enum import IntEnum, auto
+from enum import IntEnum, auto, Enum
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
@@ -27,9 +27,17 @@ class Drc(IntEnum):
 #     W_bl = 17
 
 
-DIRECTIONS = list(map(np.array, ([-1,  1], [0,  1], [1,  1],
-                                 [-1,  0],          [1,  0],
-                                 [-1, -1], [0, -1], [1, -1])))
+class Winner(Enum):
+    not_ended = auto()
+    plus = auto()
+    minus = auto()
+
+
+DIRECTIONS_LIST = [[-1,  1], [0,  1], [1,  1],
+                   [-1,  0],          [1,  0],
+                   [-1, -1], [0, -1], [1, -1]]
+
+DIRECTIONS = list(map(np.array, DIRECTIONS_LIST))
 
 
 class GameState:
@@ -66,7 +74,7 @@ class GameState:
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
-    def move(self, i: int, j: int, drc: Drc) -> int:
+    def move(self, i: int, j: int, drc: Drc) -> Winner:
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = self.directionize(drc)
@@ -84,7 +92,7 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def move_d_vec(self, i: int, j: int, direction: np.array) -> int:
+    def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
@@ -106,21 +114,21 @@ class GameState:
         self.reverse(nxt)
         return self.turn_change()
 
-    def turn_change(self) -> int:
+    def turn_change(self) -> Winner:
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
-                return -1  # 後手勝利
+                return Winner.minus  # 後手勝利
             elif (self.board != -1).all():
-                return 1  # 先手勝利
+                return Winner.plus  # 先手勝利
         else:
             if self.board[0, 1] == 1 or self.board[0, 3] == 1 or \
                     self.board[1, 2] == 1:
-                return 1  # 先手勝利
+                return Winner.plus  # 先手勝利
             elif (self.board != 1).all():
-                return -1  # 後手勝利
+                return Winner.minus  # 後手勝利
         self.turn *= -1
-        return 0
+        return Winner.not_ended
 
     def directionize(self, drc: Drc) -> np.ndarray:
         if drc == 8:
@@ -166,12 +174,12 @@ class GameState:
                 return False
         return True
 
-    def random_play(self, decided_pb=1) -> int:
+    def random_play(self, decided_pb=1) -> Tuple[Winner, int]:
         if random.random() < decided_pb:
-            moved, state = self.prior_checkmate()
-            if moved:
+            sa = self.prior_checkmate()
+            if sa is not None:
                 # print('priority')
-                return state
+                return sa
         while True:
             i = random.randint(0, 7-1)
             j = random.randint(0, 5-1)
@@ -182,16 +190,16 @@ class GameState:
             #     drc += 9
             try:
                 state = self.move(i, j, drc)
-            except GameError:
+            except ChoiceOfMovementError:
                 continue
             else:  # うまくいったとき
-                return state
+                return state, self.to_outputs_index(i, j, drc)
 
             # if self.valid_choice(i, j, drc):
             #     self.move(i, j, drc)
             #     break
 
-    def prior_checkmate(self) -> Tuple[bool, Optional[int]]:
+    def prior_checkmate(self) -> Optional[Tuple[Winner, int]]:
         """優先的にチェックメイトを狙う"""
         if self.turn == 1:
             near_king = [(0, 1), (0, 3), (1, 2)]
@@ -199,25 +207,26 @@ class GameState:
             near_king = [(6, 1), (6, 3), (5, 2)]
         random.shuffle(near_king)
         for i0, j0 in near_king:
-            moved, state = self._prior_checkmate_each(i0, j0)
-            if moved:
-                return True, state
-        return False, None
+            sa = self._prior_checkmate_each(i0, j0)
+            if sa is not None:
+                return sa
+        return None
 
-    def _prior_checkmate_each(self, i0, j0) -> Tuple[bool, Optional[int]]:
+    def _prior_checkmate_each(self, i0, j0) -> Optional[Tuple[Winner, int]]:
         """i0, j0に行けるコマがあれば行かせる"""
         if self.board[i0, j0] != 0:  # i0, j0にそもそもいけない
-            return False, None
+            return None
         d = np.array([i0, j0])
         ijs = self.near(d)
         for ij in ijs:
             try:
                 state = self.move_d_vec(ij[0], ij[1], d - ij)
-            except GameError:
+            except ChoiceOfMovementError:
                 pass
             else:
-                return True, state
-        return False, None
+                drc = DIRECTIONS_LIST.index((d-ij).tolist())
+                return state, self.to_outputs_index(ij[0], ij[1], drc)
+        return None
 
     def near(self, ij) -> Iterable[Tuple[int, int]]:
         """ijの近くにいるコマをyieldする"""
@@ -228,3 +237,44 @@ class GameState:
             if self.boundary_check(p) and \
                     self.board[p[0], p[1]] == self.turn:
                 yield p
+
+    @staticmethod
+    def to_outputs_index(i: int, j: int, drc: Drc) -> int:
+        return i * 45 + j * 9 + drc
+
+    def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
+        """出力から最も高い確率のものに有効手を指す.
+        returnは勝利判定と打った手"""
+        outputs_ = outputs
+        # outputs_ = copy.deepcopy(outputs)
+        for _ in range(10):
+            argmax = np.argmax(outputs_)
+            outputs_[argmax] = -1.0
+            try:
+                state = self.move_by_drc(*np.unravel_index(argmax, (5, 5, 9)))
+            except ChoiceOfMovementError:
+                continue
+            else:
+                # print(argmax)
+                # print(np.unravel_index(argmax, (5, 5, 9)))
+                return state, argmax
+        return self.random_play(0)
+
+    def outputs_to_move_random(self, outputs: np.ndarray) -> Tuple[Winner, int]:
+        """出力からランダムに有効手を指す.
+        ただしoutputは確率分布になっている必要がある(1への規格化が必要).
+        returnは勝利判定と打った手"""
+        num_choices = min(np.sum(outputs != 0), 10)
+        random_choices = np.random.choice(
+            100, p=outputs, size=num_choices, replace=False)
+        for r in random_choices:
+            try:
+                state = self.move_by_drc(*np.unravel_index(r, (5, 5, 9)))
+            except ChoiceOfMovementError:
+                continue
+            else:
+                # print(r)
+                # print(np.unravel_index(r, (5, 5, 4)))
+                return state, r
+
+        return self.random_play(0)

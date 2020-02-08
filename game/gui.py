@@ -5,7 +5,7 @@ import numpy as np
 import wx
 from wx.core import CommandEvent
 from .errors import ChoiceOfMovementError, GameError
-from .game_state import GameState
+from .game_state import GameState, Winner
 
 logger = getLogger(__name__)
 
@@ -121,7 +121,7 @@ class Frame(wx.Frame):
         print(d)
         try:
             state = self.gs.move_d_vec(self.selected_y, self.selected_x, d)
-        except GameError as e:
+        except ChoiceOfMovementError as e:
             print(e)
             print("入力が不正です。もう一度入力してください。")
             self.piece_selected = False
@@ -132,6 +132,8 @@ class Frame(wx.Frame):
         self.check_game_end(state)
         self.piece_selected = False
         self.panel.Refresh()
+        if self.finished:
+            return
         if self.game_mode == GameMode.black_human_vs_random or \
                 self.game_mode == GameMode.white_human_vs_random:
             self.timer.Start(1000)  # 1000ms後OnTimer()が反応
@@ -140,20 +142,20 @@ class Frame(wx.Frame):
             # self.panel.Refresh()
 
     def OnTimer(self, event):
-        state = self.gs.random_play()
+        state, _ = self.gs.random_play()
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
         self.CPU_thinking = False
 
-    def check_game_end(self, state: int):
-        if state == 1:
+    def check_game_end(self, state: Winner):
+        if state == Winner.plus:
             print(self.gs)
             print("先手勝利")
             self.finished = True
             self.SetStatusText("先手勝利")
             print(self.logs)
-        elif state == -1:
+        elif state == Winner.minus:
             print(self.gs)
             print("後手勝利")
             self.finished = True
