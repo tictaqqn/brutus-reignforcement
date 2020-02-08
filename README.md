@@ -1,12 +1,53 @@
 # Brutus
+
 リバーシとチェスの中間のようなゲーム
-https://www.asatamin.com
+<https://www.asatamin.com>
 
-### GUI play
-`python -m game.gui`
+## GUI play
 
-### CUI play
-`python -m game.play`
+```bash:
+python -m game.gui
+```
 
-### test
-`python -m unittest`
+## CUI play
+
+```bash:
+python -m game.play
+```
+
+## test
+
+```bash:
+python -m unittest
+```
+
+## 学習の開始
+
+```bash:
+python -m agent.model
+```
+
+## 強化学習について(案)
+
+まず、基準として次のような入出力のモデルを作りたい。
+
+### 盤面データの読み込みの方法
+
+入力データは4 \* 5 \* 5の配列(今は`arr`と呼ぶことにする)で
+
+- `arr[0]`は黒(キング以外)の位置
+- `arr[1]`は白(キング以外)の位置
+- `arr[2]`は黒キングの位置
+- `arr[3]`は白キングの位置
+
+という感じにしたい。
+
+### 次の一手の出力の方法
+
+長さ100の1次元配列であって、次の5 \* 5 \* 9の多次元配列`next`を`flatten`したものにしたい。
+
+- 各要素は次の一手の有効さを表す確率とする。
+- `next[i, j, drc]`は、位置`[i, j]`のコマを`DIRECTIONS[drc]`の方向に動かす確率とする。ただし、前に2コマすすめる手は`DIRECTIONS[8]`とする。
+ただし、位置`[i, j]`は`GameState`を基準とし、`drc`は`Drc`の要素で方向を表す(どちらも`game/game_state.py`を参照のこと)。
+
+動かし方としては、出力結果の手のうち、有効なものを確定的、あるいは確率的に選択する(自己対戦時は、毎回同じ手にならないよう確率的な方がいいだろう)。

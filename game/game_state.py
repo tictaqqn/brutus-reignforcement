@@ -6,31 +6,33 @@ from .errors import ChoiceOfMovementError, GameError
 
 
 class Drc(IntEnum):
-    B_f = 0
-    B_f2 = 1
-    B_b = 2
-    B_r = 3
-    B_l = 4
-    B_fr = 5
-    B_fl = 6
-    B_br = 7
-    B_bl = 8
+    B_fr = 0
+    B_r = 1
+    B_br = 2
+    B_f = 3
+    B_b = 4
+    B_fl = 5
+    B_l = 6
+    B_bl = 7
+    f2 = 8
 
-    W_f = 9
-    W_f2 = 10
-    W_b = 11
-    W_r = 12
-    W_l = 13
-    W_fr = 14
-    W_fl = 15
-    W_br = 16
-    W_bl = 17
+#     W_f = 9
+#     W_f2 = 10
+#     W_b = 11
+#     W_r = 12
+#     W_l = 13
+#     W_fr = 14
+#     W_fl = 15
+#     W_br = 16
+#     W_bl = 17
+
+
+DIRECTIONS = list(map(np.array, ([-1,  1], [0,  1], [1,  1],
+                                 [-1,  0],          [1,  0],
+                                 [-1, -1], [0, -1], [1, -1])))
 
 
 class GameState:
-    DIRECTIONS = list(map(np.array, ([-1, 1], [0, 1], [1, 1],
-                                     [-1, 0], [1, 0],
-                                     [-1, -1], [0, -1], [1, -1])))
 
     def __init__(self) -> None:
         self.board = np.array([
@@ -43,6 +45,19 @@ class GameState:
             [1, 1, 2, 1, 1]
         ], dtype=np.int8)
         self.turn = 1  # +が先攻
+
+    def to_inputs(self, flip=False) -> np.ndarray:
+        """強化学習用の入力"""
+        arr = np.empty((1, 4, 5, 5), dtype=bool)
+        if not flip:
+            b = self.board
+        else:
+            b = np.flip(self.board * -1, 0)
+        arr[0, 0] = b == 1
+        arr[0, 1] = b == -1
+        arr[0, 2] = b == 2
+        arr[0, 3] = b == -2
+        return arr
 
     def __repr__(self):
         return str(self.board)
@@ -60,7 +75,7 @@ class GameState:
             raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
         if self.board[nxt[0], nxt[1]] != 0:
             raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
-        if drc == Drc.B_f2 or drc == Drc.W_f2:
+        if drc == Drc.f2:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
@@ -107,34 +122,16 @@ class GameState:
         self.turn *= -1
         return 0
 
-    @staticmethod
-    def directionize(drc: Drc) -> np.ndarray:
-        if drc == Drc.B_f or drc == Drc.W_b:
-            return np.array([-1, 0])
-        elif drc == Drc.W_f or drc == Drc.B_b:
-            return np.array([1, 0])
-        elif drc == Drc.B_fr or drc == Drc.W_bl:
-            return np.array([-1, 1])
-        elif drc == Drc.B_fl or drc == Drc.W_br:
-            return np.array([-1, -1])
-        elif drc == Drc.B_bl or drc == Drc.W_fr:
-            return np.array([1, -1])
-        elif drc == Drc.B_br or drc == Drc.W_fl:
-            return np.array([-1, -1])
-        elif drc == Drc.B_r or drc == Drc.W_l:
-            return np.array([0, 1])
-        elif drc == Drc.B_l or drc == Drc.W_r:
-            return np.array([0, -1])
-        elif drc == Drc.B_f2:
-            return np.array([-2, 0])
-        elif drc == Drc.W_f2:
-            return np.array([2, 0])
+    def directionize(self, drc: Drc) -> np.ndarray:
+        if drc == 8:
+            return np.array([-2, 0]) if self.turn == 1 \
+                else np.array([2, 0])
         else:
-            raise ValueError("Never reaches here")
+            return DIRECTIONS[drc]
 
     def reverse(self, ij: np.ndarray) -> None:
-        # print(self.DIRECTIONS)
-        for dirc in self.DIRECTIONS:
+        # print(DIRECTIONS)
+        for dirc in DIRECTIONS:
             pos = ij + dirc
             # print(pos)
             while self.boundary_check(pos):
@@ -181,8 +178,8 @@ class GameState:
             # if self.board[i, j] != self.turn:
             #     continue
             drc = random.randint(0, 8)
-            if self.turn == -1:
-                drc += 9
+            # if self.turn == -1:
+            #     drc += 9
             try:
                 state = self.move(i, j, drc)
             except GameError:
@@ -224,8 +221,8 @@ class GameState:
 
     def near(self, ij) -> Iterable[Tuple[int, int]]:
         """ijの近くにいるコマをyieldする"""
-        directions = random.sample(self.DIRECTIONS,
-                                   len(self.DIRECTIONS))
+        directions = random.sample(DIRECTIONS,
+                                   len(DIRECTIONS))
         for d in directions:
             p = ij + d
             if self.boundary_check(p) and \
