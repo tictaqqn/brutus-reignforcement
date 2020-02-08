@@ -56,7 +56,7 @@ class GameState:
 
     def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力"""
-        arr = np.empty((1, 4, 5, 5), dtype=bool)
+        arr = np.empty((1, 4, 7, 5), dtype=bool)
         if not flip:
             b = self.board
         else:
@@ -251,12 +251,12 @@ class GameState:
             argmax = np.argmax(outputs_)
             outputs_[argmax] = -1.0
             try:
-                state = self.move_by_drc(*np.unravel_index(argmax, (5, 5, 9)))
+                state = self.move(*np.unravel_index(argmax, (7, 5, 9)))
             except ChoiceOfMovementError:
                 continue
             else:
                 # print(argmax)
-                # print(np.unravel_index(argmax, (5, 5, 9)))
+                # print(np.unravel_index(argmax, (7, 5, 9)))
                 return state, argmax
         return self.random_play(0)
 
@@ -269,12 +269,12 @@ class GameState:
             100, p=outputs, size=num_choices, replace=False)
         for r in random_choices:
             try:
-                state = self.move_by_drc(*np.unravel_index(r, (5, 5, 9)))
+                state = self.move(*np.unravel_index(r, (7, 5, 9)))
             except ChoiceOfMovementError:
                 continue
             else:
                 # print(r)
-                # print(np.unravel_index(r, (5, 5, 4)))
+                # print(np.unravel_index(r, (7, 5, 9)))
                 return state, r
 
         return self.random_play(0)

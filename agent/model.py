@@ -20,7 +20,7 @@ from keras.losses import mean_squared_error
 from keras.optimizers import Adam
 from keras.regularizers import l2
 
-from .config import Config
+from .config import Config, QLearnConfig
 from game.game_state import GameState, Winner
 
 
@@ -52,7 +52,7 @@ class QNetwork:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input((4, 5, 5))
+        in_x = x = Input((4, 7, 5))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
@@ -70,7 +70,7 @@ class QNetwork:
         x = Activation("relu")(x)
         x = Flatten()(x)
         # no output for 'pass'
-        out = Dense(100, kernel_regularizer=l2(mc.l2_reg),
+        out = Dense(315, kernel_regularizer=l2(mc.l2_reg),
                     activation="softmax", name="out")(x)
 
         # x = Dense(mc.value_fc_size, kernel_regularizer=l2(mc.l2_reg),
@@ -98,8 +98,8 @@ class QNetwork:
 
     # 重みの学習
     def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
-        inputs = np.zeros((batch_size, 4, 5, 5))
-        targets = np.zeros((batch_size, 100))
+        inputs = np.zeros((batch_size, 4, 7, 5))
+        targets = np.zeros((batch_size, 315))
         mini_batch = memory.sample(batch_size)
 
         for i, (state_b, action_b, reward_b, next_state_b) in enumerate(mini_batch):
@@ -134,7 +134,7 @@ class QNetwork:
                 self.model = Model.from_config(json.load(f))
             self.model.load_weights(weight_path)
             self.model.compile(loss='mse',
-                optimizer=Adam(lr=self.config.model.learning_rate))
+                               optimizer=Adam(lr=self.config.model.learning_rate))
             self.model.summary()
             self.digest = self.fetch_digest(weight_path)
             logger.debug(f"loaded model digest = {self.digest}")
@@ -170,6 +170,16 @@ def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs
     return s
 
 
+def calc_reward(qc: QLearnConfig, next_board: np.ndarray) -> float:
+    return (qc.reward_stone_mine * np.sum(next_board[0, 1])
+            + qc.reward_stone_against * np.sum(next_board[0, 0])
+            + qc.reward_front_stone * reward_front(next_board))
+
+def reward_front(board: np.ndarray) -> int:
+    return np.sum(board[0, 1, 0:3]) - np.sum(board[0, 1, 3:4])
+
+
+
 def learn(model_config_path=None, weight_path=None):
     config = Config()
     qc = config.Qlearn
@@ -185,7 +195,8 @@ def learn(model_config_path=None, weight_path=None):
         mainQN = QNetwork(config)
         success_load = mainQN.load(model_config_path, weight_path)
         if not success_load:
-            raise FileNotFoundError(f"{model_config_path} {weight_path}が読み込めませんでした")
+            raise FileNotFoundError(
+                f"{model_config_path} {weight_path}が読み込めませんでした")
         targetQN = QNetwork(config)
         targetQN.load(model_config_path, weight_path)
     memory = Memory(max_size=qc.memory_size)
@@ -195,7 +206,8 @@ def learn(model_config_path=None, weight_path=None):
         state = gs.random_play()  # 1step目は適当な行動をとる
         episode_reward = 0
 
-        targetQN.model.set_weights(mainQN.model.get_weights())   # 行動決定と価値計算のQネットワークをおなじにする
+        # 行動決定と価値計算のQネットワークをおなじにする
+        targetQN.model.set_weights(mainQN.model.get_weights())
 
         for t in range(qc.max_number_of_steps):  # 2手のループ
             board = gs.to_inputs()
@@ -211,24 +223,21 @@ def learn(model_config_path=None, weight_path=None):
 
             if state == Winner.minus:
                 reward = qc.reward_win  # 報酬
-            else:
-                reward = 0
 
             next_board = gs.to_inputs()
 
             # board = next_board  # 状態更新
-
-            # Qネットワークの重みを学習・更新する replay
-            if len(memory) > qc.batch_size:  # and not islearned:
-                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
-
-            if qc.DQN_MODE:
-                targetQN.model.set_weights(mainQN.model.get_weights()) # 行動決定と価値計算のQネットワークをおなじにする
-
             # 1施行終了時の処理
             if state != Winner.not_ended:
                 episode_reward += reward  # 合計報酬を更新
                 memory.add((board, action, reward, next_board))     # メモリの更新する
+                # Qネットワークの重みを学習・更新する replay
+                if len(memory) > qc.batch_size:  # and not islearned:
+                    mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+                if qc.DQN_MODE:
+                    # 行動決定と価値計算のQネットワークをおなじにする
+                    targetQN.model.set_weights(mainQN.model.get_weights())
+
                 total_reward_vec = np.hstack(
                     (total_reward_vec[1:], episode_reward))  # 報酬を記録
                 print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
@@ -241,10 +250,18 @@ def learn(model_config_path=None, weight_path=None):
             if state == Winner.plus:
                 reward = qc.reward_lose
             else:
-                reward = 0
+                reward = calc_reward(qc, next_board)
 
             episode_reward += reward  # 合計報酬を更新
             memory.add((board, action, reward, next_board))     # メモリの更新する
+
+            # Qネットワークの重みを学習・更新する replay
+            if len(memory) > qc.batch_size:  # and not islearned:
+                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+
+            if qc.DQN_MODE:
+                # 行動決定と価値計算のQネットワークをおなじにする
+                targetQN.model.set_weights(mainQN.model.get_weights())
 
             # 1施行終了時の処理
             if state != Winner.not_ended:

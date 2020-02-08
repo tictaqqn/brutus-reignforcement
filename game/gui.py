@@ -6,8 +6,13 @@ import wx
 from wx.core import CommandEvent
 from .errors import ChoiceOfMovementError, GameError
 from .game_state import GameState, Winner
+from agent.model import QNetwork
+from agent.config import Config
 
 logger = getLogger(__name__)
+
+MODEL_CONFIG_PATH = "results/001_QLearning/2020-02-08-18-42-17-mainQN.json"
+WEIGHT_PATH = "results/001_QLearning/2020-02-08-18-42-17-mainQN.h5"
 
 
 def start() -> None:
@@ -27,6 +32,7 @@ class GameMode(IntEnum):
     humans_play = 1
     black_human_vs_random = 2
     white_human_vs_random = 3
+    black_human_vs_ML = 4
 
 
 class Frame(wx.Frame):
@@ -55,6 +61,8 @@ class Frame(wx.Frame):
                     u"New Game (Black) vs random")
         menu.Append(GameMode.white_human_vs_random,
                     u"New Game (White) vs random")
+        menu.Append(GameMode.black_human_vs_ML,
+                    u"New Game (Black) vs ML")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
@@ -64,11 +72,14 @@ class Frame(wx.Frame):
         menu_bar.Append(menu, u"menu")
         self.SetMenuBar(menu_bar)
 
-        self.Bind(wx.EVT_MENU, self.handle_new_game, id=GameMode.humans_play)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.humans_play)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.black_human_vs_random)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.white_human_vs_random)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.black_human_vs_ML)
         self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
 
         # status bar
@@ -87,6 +98,12 @@ class Frame(wx.Frame):
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_random:
             self.gs.random_play()
+            self.panel.Refresh()
+        elif self.game_mode == GameMode.black_human_vs_ML:
+            self.model = QNetwork(config=Config())
+            success_load= self.model.load(MODEL_CONFIG_PATH, WEIGHT_PATH)
+            if not success_load:
+                raise FileNotFoundError(f"{MODEL_CONFIG_PATH} {WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
 
     def try_move(self, event):
@@ -135,14 +152,19 @@ class Frame(wx.Frame):
         if self.finished:
             return
         if self.game_mode == GameMode.black_human_vs_random or \
-                self.game_mode == GameMode.white_human_vs_random:
-            self.timer.Start(1000)  # 1000ms後OnTimer()が反応
+                self.game_mode == GameMode.white_human_vs_random or \
+                self.game_mode == GameMode.black_human_vs_ML:
+            self.timer.Start(500)  # 1000ms後OnTimer()が反応
             self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
 
     def OnTimer(self, event) -> None:
-        state, _ = self.gs.random_play()
+        if self.game_mode != GameMode.black_human_vs_ML:
+            state, _ = self.gs.random_play()
+        else:
+            retTargetQs = self.model.model.predict(self.gs.to_inputs())[0]
+            state, _ = self.gs.outputs_to_move_max(retTargetQs)
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
