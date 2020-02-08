@@ -173,14 +173,19 @@ def take_action_eps_greedy(board: np.ndarray, episode: int, mainQN: QNetwork, gs
 def calc_reward(qc: QLearnConfig, next_board: np.ndarray) -> float:
     return (qc.reward_stone_mine * np.sum(next_board[0, 1])
             + qc.reward_stone_against * np.sum(next_board[0, 0])
-            + qc.reward_front_stone * reward_front(next_board))
+            + qc.reward_front_mine * count_front_minus(next_board)
+            + qc.reward_stone_against * count_front_plus(next_board))
 
-def reward_front(board: np.ndarray) -> int:
+
+def count_front_minus(board: np.ndarray) -> int:
+    return np.sum(board[0, 1, 5:7]) - np.sum(board[0, 1, 2:4])
+
+
+def count_front_plus(board: np.ndarray) -> int:
     return np.sum(board[0, 1, 0:3]) - np.sum(board[0, 1, 3:4])
 
 
-
-def learn(model_config_path=None, weight_path=None):
+def learn_random(model_config_path=None, weight_path=None) -> None:
     config = Config()
     qc = config.Qlearn
 
@@ -221,8 +226,8 @@ def learn(model_config_path=None, weight_path=None):
             #     print(gs)
             # ==================
 
-            if state == Winner.minus:
-                reward = qc.reward_win  # 報酬
+            if state == Winner.plus:
+                reward = qc.reward_lose  # 報酬
 
             next_board = gs.to_inputs()
 
@@ -247,8 +252,8 @@ def learn(model_config_path=None, weight_path=None):
 
             state, _ = gs.random_play()
 
-            if state == Winner.plus:
-                reward = qc.reward_lose
+            if state == Winner.minus:
+                reward = qc.reward_win
             else:
                 reward = calc_reward(qc, next_board)
 
@@ -293,6 +298,6 @@ def learn(model_config_path=None, weight_path=None):
 
 
 if __name__ == "__main__":
-    learn()
-    # learn("results/001_QLearning/2020-02-06-11-01-48-mainQN.json",
-    #       "results/001_QLearning/2020-02-06-11-01-48-mainQN.h5")
+    # learn_random()
+    learn_random("results/001_QLearning/2020-02-08-18-42-17-mainQN.json",
+          "results/001_QLearning/2020-02-08-18-42-17-mainQN.h5")

@@ -36,9 +36,10 @@ class QLearnConfig(ConfigBase):
         self.memory_size = 10000            # バッファーメモリの大きさ
         self.batch_size = 32                # Q-networkを更新するバッチの大記載
         # ---
-        self.reward_win = 100               # 勝利時の報酬
-        self.reward_lose = -100             # 敗北時の報酬
+        self.reward_win = 10000               # 勝利時の報酬
+        self.reward_lose = -10000             # 敗北時の報酬
         self.reward_stone_mine = 1          # 自分の石の数1つあたりの報酬
         self.reward_stone_against = -1      # 相手の石の数1つあたりの報酬
-        self.reward_front_stone = 1
+        self.reward_front_mine = 50        # 前の方に自石があるときの報酬
+        self.reward_front_against = -50    # 前の方に相手の石があるときの報酬
         # self.reward_auto_play = False # random_play時の報酬(未実装)
