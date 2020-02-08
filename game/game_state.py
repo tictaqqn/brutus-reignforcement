@@ -266,7 +266,7 @@ class GameState:
         returnは勝利判定と打った手"""
         num_choices = min(np.sum(outputs != 0), 10)
         random_choices = np.random.choice(
-            100, p=outputs, size=num_choices, replace=False)
+            315, p=outputs, size=num_choices, replace=False)
         for r in random_choices:
             try:
                 state = self.move(*np.unravel_index(r, (7, 5, 9)))
