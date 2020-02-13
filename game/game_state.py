@@ -55,7 +55,8 @@ class GameState:
         self.turn = 1  # +が先攻
 
     def to_inputs(self, flip=False) -> np.ndarray:
-        """強化学習用の入力"""
+        """強化学習用の入力
+        flipで盤面を先手用と後手用の反転"""
         arr = np.empty((1, 2, 7, 5), dtype=bool)
         if not flip:
             b = self.board
@@ -73,6 +74,7 @@ class GameState:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
 
     def move(self, i: int, j: int, drc: Drc) -> Winner:
+        """drcへの移動"""
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = self.directionize(drc)
@@ -91,6 +93,7 @@ class GameState:
         return self.turn_change()
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
+        """directionのベクトル方向への移動"""
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
@@ -136,7 +139,7 @@ class GameState:
             return DIRECTIONS[drc]
 
     def reverse(self, ij: np.ndarray) -> None:
-        # print(DIRECTIONS)
+        """石を裏返す"""
         for dirc in DIRECTIONS:
             pos = ij + dirc
             # print(pos)
@@ -173,9 +176,8 @@ class GameState:
         return True
 
     def random_play(self, decided_pb=1) -> Tuple[Winner, int]:
-        """
-        decided_pbの確率で王手を優先的に打つ
-        """
+        """decided_pbの確率で王手を優先的に打つ
+        returnは勝利判定と打った手"""
         if random.random() < decided_pb:
             sa = self.prior_checkmate()
             if sa is not None:
@@ -213,7 +215,7 @@ class GameState:
                 return sa
         return None
 
-    def _prior_checkmate_each(self, i0, j0) -> Optional[Tuple[Winner, int]]:
+    def _prior_checkmate_each(self, i0: int, j0: int) -> Optional[Tuple[Winner, int]]:
         """i0, j0に行けるコマがあれば行かせる"""
         if self.board[i0, j0] != 0:  # i0, j0にそもそもいけない
             return None
@@ -245,6 +247,7 @@ class GameState:
 
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.
+        ただしdeepcopyしない場合、outputsに副作用を生じる
         returnは勝利判定と打った手"""
         outputs_ = outputs
         # outputs_ = copy.deepcopy(outputs)
