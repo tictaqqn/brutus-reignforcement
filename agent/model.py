@@ -184,7 +184,6 @@ def count_front_minus(board: np.ndarray) -> int:
 def count_front_plus(board: np.ndarray) -> int:
     return np.sum(board[0, 1, 0:3]) - np.sum(board[0, 1, 3:4])
 
-    
 
 def save_model(mainQN: QNetwork, config: Config) -> None:
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -296,7 +295,7 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
     # 最後に保存(直前にしていればしない)
     if episode % qc.save_interval != qc.save_interval - 1:
         save_model(mainQN, config)
-        
+
 
 def learn_self(model_config_path=None, weight_path=None) -> None:
     config = Config()
@@ -320,7 +319,7 @@ def learn_self(model_config_path=None, weight_path=None) -> None:
         if not success_load:
             raise FileNotFoundError(
                 f"{model_config_path} {weight_path}が読み込めませんでした")
-        
+
         mainQN_minus.load(model_config_path, weight_path)
         targetQN_plus = QNetwork(config)
         targetQN_minus = QNetwork(config)
@@ -360,7 +359,8 @@ def learn_self(model_config_path=None, weight_path=None) -> None:
                 memory.add((board, action, reward, next_board))     # メモリの更新する
                 # Qネットワークの重みを学習・更新する replay
                 if len(memory) > qc.batch_size:  # and not islearned:
-                    mainQN_minus.replay(memory, qc.batch_size, qc.gamma, targetQN)
+                    mainQN_minus.replay(
+                        memory, qc.batch_size, qc.gamma, targetQN)
                 if qc.DQN_MODE:
                     # 行動決定と価値計算のQネットワークをおなじにする
                     targetQN.model.set_weights(mainQN.model.get_weights())
@@ -417,6 +417,7 @@ def learn_self(model_config_path=None, weight_path=None) -> None:
                     f"results/001_QLearning/{d}-mainQN.h5")
         with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
             json.dump(config._to_dict(), f, indent=4)
+
 
 if __name__ == "__main__":
     learn_random()
