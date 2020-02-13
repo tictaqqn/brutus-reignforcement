@@ -31,7 +31,7 @@ class QLearnConfig(ConfigBase):
         self.save_interval = 50 # このゲーム数ごとに保存
         self.gamma = 0.99    # 割引係数
         # ---
-        self.hidden_size = 16               # Q-networkの隠れ層のニューロンの数
+        # self.hidden_size = 16               # Q-networkの隠れ層のニューロンの数
         self.learning_rate = 0.00001        # Q-networkの学習係数
         self.memory_size = 10000            # バッファーメモリの大きさ
         self.batch_size = 32                # Q-networkを更新するバッチの大記載

@@ -52,7 +52,7 @@ class QNetwork:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input((4, 7, 5))
+        in_x = x = Input((2, 7, 5))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
@@ -98,7 +98,7 @@ class QNetwork:
 
     # 重みの学習
     def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
-        inputs = np.zeros((batch_size, 4, 7, 5))
+        inputs = np.zeros((batch_size, 2, 7, 5))
         targets = np.zeros((batch_size, 315))
         mini_batch = memory.sample(batch_size)
 
@@ -183,6 +183,15 @@ def count_front_minus(board: np.ndarray) -> int:
 
 def count_front_plus(board: np.ndarray) -> int:
     return np.sum(board[0, 1, 0:3]) - np.sum(board[0, 1, 3:4])
+
+    
+
+def save_model(mainQN: QNetwork, config: Config) -> None:
+    d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
+                f"results/001_QLearning/{d}-mainQN.h5")
+    with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
+        json.dump(config._to_dict(), f, indent=4)
 
 
 def learn_random(model_config_path=None, weight_path=None) -> None:
@@ -282,6 +291,119 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
         #     print('Episode %d train agent successfuly!' % episode)
             # islearned = True
         if episode % qc.save_interval == qc.save_interval - 1:
+            save_model(mainQN, config)
+
+    # 最後に保存(直前にしていればしない)
+    if episode % qc.save_interval != qc.save_interval - 1:
+        save_model(mainQN, config)
+        
+
+def learn_self(model_config_path=None, weight_path=None) -> None:
+    config = Config()
+    qc = config.Qlearn
+
+    total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納
+    # Qネットワークとメモリ、Actorの生成--------------------------------------------------------
+    if model_config_path is None or weight_path is None:
+        mainQN_plus = QNetwork(config)     # メインのQネットワーク
+        mainQN_minus = QNetwork(config)     # メインのQネットワーク
+        mainQN_plus.build()
+        mainQN_minus.build()
+        targetQN_plus = QNetwork(config)   # 価値を計算するQネットワーク
+        targetQN_minus = QNetwork(config)   # 価値を計算するQネットワーク
+        targetQN_plus.build()
+        targetQN_minus.build()
+    else:
+        mainQN_plus = QNetwork(config)
+        mainQN_minus = QNetwork(config)
+        success_load = mainQN_plus.load(model_config_path, weight_path)
+        if not success_load:
+            raise FileNotFoundError(
+                f"{model_config_path} {weight_path}が読み込めませんでした")
+        
+        mainQN_minus.load(model_config_path, weight_path)
+        targetQN_plus = QNetwork(config)
+        targetQN_minus = QNetwork(config)
+        targetQN_plus.load(model_config_path, weight_path)
+        targetQN_minus.load(model_config_path, weight_path)
+    memory = Memory(max_size=qc.memory_size)
+
+    for episode in trange(qc.num_episodes):  # 試行数分繰り返す
+        gs = GameState()
+        state = gs.random_play()  # 1step目は適当な行動をとる
+        episode_reward = 0
+
+        # 行動決定と価値計算のQネットワークをおなじにする
+        targetQN.model.set_weights(mainQN.model.get_weights())
+
+        for t in range(qc.max_number_of_steps):  # 2手のループ
+            board = gs.to_inputs()
+
+            state, action = take_action_eps_greedy(
+                board, episode, mainQN_minus, gs)   # 時刻tでの行動を決定する
+            # next_state, reward, done, info = env.step(action)   # 行動a_tの実行による、s_{t+1}, _R{t}を計算する
+
+            # verbose ==========
+            # if t % 10 == 9:
+            #     print(gs)
+            # ==================
+
+            if state == Winner.plus:
+                reward = qc.reward_lose  # 報酬
+
+            next_board = gs.to_inputs()
+
+            # board = next_board  # 状態更新
+            # 1施行終了時の処理
+            if state != Winner.not_ended:
+                episode_reward += reward  # 合計報酬を更新
+                memory.add((board, action, reward, next_board))     # メモリの更新する
+                # Qネットワークの重みを学習・更新する replay
+                if len(memory) > qc.batch_size:  # and not islearned:
+                    mainQN_minus.replay(memory, qc.batch_size, qc.gamma, targetQN)
+                if qc.DQN_MODE:
+                    # 行動決定と価値計算のQネットワークをおなじにする
+                    targetQN.model.set_weights(mainQN.model.get_weights())
+
+                total_reward_vec = np.hstack(
+                    (total_reward_vec[1:], episode_reward))  # 報酬を記録
+                print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
+                      % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
+                         'plus' if state == Winner.plus else 'minus'))
+                break
+
+            state, _ = gs.random_play()
+
+            if state == Winner.minus:
+                reward = qc.reward_win
+            else:
+                reward = calc_reward(qc, next_board)
+
+            episode_reward += reward  # 合計報酬を更新
+            memory.add((board, action, reward, next_board))     # メモリの更新する
+
+            # Qネットワークの重みを学習・更新する replay
+            if len(memory) > qc.batch_size:  # and not islearned:
+                mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+
+            if qc.DQN_MODE:
+                # 行動決定と価値計算のQネットワークをおなじにする
+                targetQN.model.set_weights(mainQN.model.get_weights())
+
+            # 1施行終了時の処理
+            if state != Winner.not_ended:
+                total_reward_vec = np.hstack(
+                    (total_reward_vec[1:], episode_reward))  # 報酬を記録
+                print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
+                      % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
+                         'plus' if state == Winner.plus else 'minus'))
+                break
+
+        # 複数施行の平均報酬で終了を判断
+        # if total_reward_vec.mean() >= goal_average_reward:
+        #     print('Episode %d train agent successfuly!' % episode)
+            # islearned = True
+        if episode % qc.save_interval == qc.save_interval - 1:
             d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
             mainQN.save(f"results/001_QLearning/{d}-mainQN.json",
                         f"results/001_QLearning/{d}-mainQN.h5")
@@ -296,8 +418,7 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
         with open(f"results/001_QLearning/{d}-config.json", 'x') as f:
             json.dump(config._to_dict(), f, indent=4)
 
-
 if __name__ == "__main__":
-    # learn_random()
-    learn_random("results/001_QLearning/2020-02-08-18-42-17-mainQN.json",
-          "results/001_QLearning/2020-02-08-18-42-17-mainQN.h5")
+    learn_random()
+    # learn_random("results/001_QLearning/2020-02-08-18-42-17-mainQN.json",
+    #       "results/001_QLearning/2020-02-08-18-42-17-mainQN.h5")

@@ -56,15 +56,13 @@ class GameState:
 
     def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力"""
-        arr = np.empty((1, 4, 7, 5), dtype=bool)
+        arr = np.empty((1, 2, 7, 5), dtype=bool)
         if not flip:
             b = self.board
         else:
             b = np.flip(self.board * -1, 0)
         arr[0, 0] = b == 1
         arr[0, 1] = b == -1
-        arr[0, 2] = b == 2
-        arr[0, 3] = b == -2
         return arr
 
     def __repr__(self):
@@ -175,6 +173,9 @@ class GameState:
         return True
 
     def random_play(self, decided_pb=1) -> Tuple[Winner, int]:
+        """
+        decided_pbの確率で王手を優先的に打つ
+        """
         if random.random() < decided_pb:
             sa = self.prior_checkmate()
             if sa is not None:
@@ -262,7 +263,7 @@ class GameState:
 
     def outputs_to_move_random(self, outputs: np.ndarray) -> Tuple[Winner, int]:
         """出力からランダムに有効手を指す.
-        ただしoutputは確率分布になっている必要がある(1への規格化が必要).
+        ただしoutputsは確率分布になっている必要がある(1への規格化が必要).
         returnは勝利判定と打った手"""
         num_choices = min(np.sum(outputs != 0), 10)
         random_choices = np.random.choice(
