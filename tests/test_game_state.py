@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from game.game_state import GameState, Drc
+from game.game_state import GameState, Drc, Winner
 
 
 class TestGameState(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestGameState(unittest.TestCase):
                 [0] * 5
             ])).all()
         )
-        self.gs.move(1, 4, Drc.W_f)
+        self.gs.move(1, 4, Drc.B_b)
         self.assertTrue(
             (self.gs.board == np.array([
                 [0] * 5,
@@ -54,7 +54,7 @@ class TestGameState(unittest.TestCase):
             [0] * 5
         ])
         state = self.gs.move(4, 1, Drc.B_r)
-        self.assertIsNone(state)
+        self.assertEqual(state, Winner.not_ended)
         self.assertTrue(
             (self.gs.board == np.array([
                 [0] * 5,
@@ -78,7 +78,7 @@ class TestGameState(unittest.TestCase):
             [0] * 5
         ])
         state = self.gs.move(4, 1, Drc.B_r)
-        self.assertEqual(state, 1)
+        self.assertEqual(state, Winner.plus)
 
     def test_win_of_minus_checkmate(self):
         self.gs.board = np.array([
@@ -91,4 +91,16 @@ class TestGameState(unittest.TestCase):
             [1, -1, 2, 1, 1]
         ])
         state = self.gs.move(4, 1, Drc.B_r)
-        self.assertEqual(state, -1)
+        self.assertEqual(state, Winner.minus)
+
+    def test_flip(self):
+        self.assertTrue((
+            self.gs.to_inputs()
+            == self.gs.to_inputs(True)
+        ).all())
+
+    def test_outputs_to_move_random(self):
+        outputs = np.linspace(0.0, 1.0, 315)
+        outputs /= np.sum(outputs)
+        self.gs.outputs_to_move_random(outputs)
+    
