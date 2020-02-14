@@ -7,6 +7,8 @@ class Config(ConfigBase):
     def __init__(self):
         self.model = ModelConfig()
         self.Qlearn = QLearnConfig()
+        self.pre_trained = None
+        self.learn_func = None
 
 
 class ModelConfig(ConfigBase):

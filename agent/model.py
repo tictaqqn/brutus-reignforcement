@@ -195,6 +195,7 @@ def save_model(mainQN: QNetwork, config: Config) -> None:
 
 def learn_random(model_config_path=None, weight_path=None) -> None:
     config = Config()
+    config.learn_func = 'learn_random'
     qc = config.Qlearn
 
     total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納
@@ -212,6 +213,7 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
                 f"{model_config_path} {weight_path}が読み込めませんでした")
         targetQN = QNetwork(config)
         targetQN.load(model_config_path, weight_path)
+        config.pre_trained = weight_path
     memory = Memory(max_size=qc.memory_size)
 
     for episode in trange(qc.num_episodes):  # 試行数分繰り返す
@@ -296,9 +298,10 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
     if episode % qc.save_interval != qc.save_interval - 1:
         save_model(mainQN, config)
 
-
+# 未実装
 def learn_self(model_config_path=None, weight_path=None) -> None:
     config = Config()
+    config.learn_func = 'learn_random'
     qc = config.Qlearn
 
     total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納
@@ -325,6 +328,8 @@ def learn_self(model_config_path=None, weight_path=None) -> None:
         targetQN_minus = QNetwork(config)
         targetQN_plus.load(model_config_path, weight_path)
         targetQN_minus.load(model_config_path, weight_path)
+        config.pre_trained = weight_path
+
     memory = Memory(max_size=qc.memory_size)
 
     for episode in trange(qc.num_episodes):  # 試行数分繰り返す
