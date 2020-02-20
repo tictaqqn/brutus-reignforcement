@@ -1,0 +1,31 @@
+{
+    "model": {
+        "cnn_filter_num": 32,
+        "cnn_filter_size": 5,
+        "res_layer_num": 2,
+        "l2_reg": 0.0001,
+        "value_fc_size": 256,
+        "learning_rate": 0.01
+    },
+    "Qlearn": {
+        "DQN_MODE": false,
+        "num_episodes": 300,
+        "max_number_of_steps": 25,
+        "num_consecutive_iterations": 10,
+        "save_interval": 50,
+        "gamma": 0.99,
+        "memory_size": 10000,
+        "batch_size": 32,
+        "reward_win": 10000,
+        "reward_lose": -10000,
+        "reward_stone_mine": 1,
+        "reward_stone_against": -1,
+        "reward_front_mine": 0,
+        "reward_front_against": 0,
+        "reward_check_mine": 500,
+        "reward_check_against": -4000,
+        "reward_consider_checking": 1000
+    },
+    "pre_trained": "results/001_QLearning/2020-02-13-19-59-05-mainQN.h5",
+    "learn_func": "learn_guard_checkmate"
+}
