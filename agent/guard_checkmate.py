@@ -125,6 +125,9 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
                     reward = qc.reward_win
                 else:
                     reward = calc_reward(qc, next_board)
+                
+                if t == 0:
+                    reward += qc.reward_consider_checking
 
                 episode_reward += reward  # 合計報酬を更新
                 memory.add((board, action, reward, next_board))     # メモリの更新する

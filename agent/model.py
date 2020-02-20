@@ -174,7 +174,17 @@ def calc_reward(qc: QLearnConfig, next_board: np.ndarray) -> float:
     return (qc.reward_stone_mine * np.sum(next_board[0, 1])
             + qc.reward_stone_against * np.sum(next_board[0, 0])
             + qc.reward_front_mine * count_front_minus(next_board)
-            + qc.reward_stone_against * count_front_plus(next_board))
+            + qc.reward_front_against * count_front_plus(next_board)
+            + qc.reward_check_mine * count_check_minus(next_board)
+            + qc.reward_check_against * count_check_plus(next_board))
+
+
+def count_check_minus(board: np.ndarray) -> int:
+    return (board[0, 1, 6, 1] + board[0, 1, 6, 3] + board[0, 1, 5, 2])
+
+
+def count_check_plus(board: np.ndarray) -> int:
+    return (board[0, 0, 0, 1] + board[0, 0, 0, 3] + board[0, 0, 1, 2])
 
 
 def count_front_minus(board: np.ndarray) -> int:
