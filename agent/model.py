@@ -301,7 +301,7 @@ def learn_random(model_config_path=None, weight_path=None) -> None:
 # 未実装
 def learn_self(model_config_path=None, weight_path=None) -> None:
     config = Config()
-    config.learn_func = 'learn_random'
+    config.learn_func = 'learn_self'
     qc = config.Qlearn
 
     total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納
