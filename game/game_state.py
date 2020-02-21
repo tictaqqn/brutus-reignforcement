@@ -59,14 +59,14 @@ class GameState:
         flipで盤面を先手用と後手用の反転"""
         arr = np.empty((1, 2, 7, 5), dtype=bool)
         if not flip:
-            b = self.board
+            board = self.board
         else:
-            b = np.flip(self.board * -1, 0)
-        arr[0, 0] = b == 1
-        arr[0, 1] = b == -1
+            board = np.flip(self.board * -1, 0)
+        arr[0, 0] = board == 1
+        arr[0, 1] = board == -1
         return arr
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.board)
 
     @staticmethod
