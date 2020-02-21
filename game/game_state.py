@@ -133,8 +133,8 @@ class GameState:
 
     def directionize(self, drc: Drc) -> np.ndarray:
         if drc == 8:
-            return np.array([-2, 0]) if self.turn == 1 \
-                else np.array([2, 0])
+            return (np.array([-2, 0]) if self.turn == 1
+                    else np.array([2, 0]))
         else:
             return DIRECTIONS[drc]
 
@@ -156,10 +156,11 @@ class GameState:
                     break
                 pos += dirc
 
-    def valid_choice(self, i, j, drc) -> bool:
-        if self.board[i, j] != self.turn:
-            # raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
-            return False
+    def valid_choice(self, i: int, j: int, drc: Drc) -> bool:
+        """手が有効かどうかを返す"""
+        # if self.board[i, j] != self.turn:
+        #     # raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
+        #     return False
         direction = self.directionize(drc)
         nxt = np.array([i, j]) + direction
         if not self.boundary_check(nxt):
@@ -282,3 +283,21 @@ class GameState:
                 return state, r
 
         return self.random_play(0)
+
+    def board_hash(self) -> int:
+        """ハッシュ関数。ZobristのようにXORを用いている"""
+        xor_sum = 0
+        for i in range(7):
+            for j in range(5):
+                xor_sum ^= self.board[i, j] * 35 + i * 5 + j
+        return abs(xor_sum)
+
+    def generate_legal_moves(self) -> Iterable[int]:
+        """有効手をyieldする"""
+        for i in range(7):
+            for j in range(5):
+                if self.board[i, j] != self.turn:
+                    continue
+                for drc in range(9):
+                    if self.valid_choice(i, j, drc):
+                        yield self.to_outputs_index(i, j, drc)
