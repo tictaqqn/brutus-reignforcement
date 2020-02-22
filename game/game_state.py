@@ -54,7 +54,7 @@ class GameState:
             [1, 1, 2, 1, 1]
         ], dtype=np.int8)
         self.turn = 1  # +が先攻
-        self.n_turn = 0
+        self.n_turns = 0
         self.logs = deque()  # type: deque[Tuple[int, int]]
 
     def to_inputs(self, flip=False) -> np.ndarray:
@@ -90,6 +90,8 @@ class GameState:
 
     def move(self, i: int, j: int, drc: Drc) -> Winner:
         """drcへの移動"""
+        if self.n_turns == 0 and drc == Drc.f2:
+            raise ChoiceOfMovementError(f"先手の初手は2マス移動不可")
         if self.board[i, j] != self.turn:
             raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         direction = self.directionize(drc)
@@ -112,6 +114,8 @@ class GameState:
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
         """directionのベクトル方向への移動"""
+        if self.n_turns == 0 and direction[0] == -2:
+            raise ChoiceOfMovementError(f"先手の初手は2マス移動不可")
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
@@ -155,6 +159,7 @@ class GameState:
             elif (self.board != 1).all():
                 return Winner.minus  # 後手勝利
         self.turn *= -1
+        self.n_turns += 1
         return Winner.not_ended
 
     def directionize(self, drc: Drc) -> np.ndarray:
