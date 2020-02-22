@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 import chainer
 from chainer import serializers
@@ -16,6 +17,9 @@ import math
 import time
 import copy
 
+from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
+from game.game_state import GameState
+
 # UCBのボーナス項の定数
 C_PUCT = 1.0
 # 1手当たりのプレイアウト数
@@ -25,7 +29,7 @@ RESIGN_THRESHOLD = 0.01
 # 温度パラメータ
 TEMPERATURE = 1.0
 
-def softmax_temperature_with_normalize(logits, temperature):
+def softmax_temperature_with_normalize(logits, temperature: float):
     # 温度パラメータを適用
     logits /= temperature
 
@@ -53,7 +57,7 @@ class MCTSPlayer(BasePlayer):
 
         # ノードの情報
         self.node_hash = NodeHash()
-        self.uct_nodes = [UctNode() for _ in range(UCT_HASH_SIZE)]
+        self.uct_nodes = [UctNode() for _ in range(UCT_HASH_SIZE)] # type: List[UctNode]
 
         # プレイアウト回数管理
         self.po_info = PlayoutInfo()
@@ -63,7 +67,7 @@ class MCTSPlayer(BasePlayer):
         self.temperature = TEMPERATURE
 
     # UCB値が最大の手を求める
-    def select_max_ucb_child(self, board, current_node):
+    def select_max_ucb_child(self, gs: GameState, current_node: UctNode):
         child_num = current_node.child_num
         child_win = current_node.child_win
         child_move_count = current_node.child_move_count
@@ -76,18 +80,18 @@ class MCTSPlayer(BasePlayer):
 
 
     # ノードの展開
-    def expand_node(self, board):
-        index = self.node_hash.find_same_hash_index(board.zobrist_hash(), board.turn, board.move_number)
+    def expand_node(self, gs: GameState):
+        index = self.node_hash.find_same_hash_index(gs.zobrist_hash(), gs.turn, gs.move_number)
 
         # 合流先が検知できれば, それを返す
         if not index == UCT_HASH_SIZE:
             return index
     
         # 空のインデックスを探す
-        index = self.node_hash.search_empty_index(board.zobrist_hash(), board.turn, board.move_number)
+        index = self.node_hash.search_empty_index(gs.zobrist_hash(), gs.turn, gs.move_number)
 
         # 現在のノードの初期化
-        current_node = self.uct_node[index]
+        current_node = self.uct_nodes[index]
         current_node.move_count = 0
         current_node.win = 0.0
         current_node.child_num = 0
@@ -95,9 +99,9 @@ class MCTSPlayer(BasePlayer):
         current_node.value_win = 0.0
 
         # 候補手の展開
-        current_node.child_move = [move for move in board.legal_moves]
+        current_node.child_move = list(gs.generate_legal_moves())
         child_num = len(current_node.child_move)
-        current_node.child_index = [NOT_EXPANDED for _ in range(child_num)]
+        current_node.child_index = [NOT_EXPANDED] * child_num
         current_node.child_move_count = np.zeros(child_num, dtype=np.int32)
         current_node.child_win = np.zeros(child_num, dtype=np.float32)
 
@@ -106,7 +110,7 @@ class MCTSPlayer(BasePlayer):
 
         # ノードを評価
         if child_num > 0:
-            self.eval_node(board, index)
+            self.eval_node(gs, index)
         else:
             current_node.value_win = 0.0
             current_node.evaled = True
@@ -129,7 +133,7 @@ class MCTSPlayer(BasePlayer):
             return False
 
     # UCT探索
-    def uct_search(self, board, current):
+    def uct_search(self, gs, current):
         current_node = self.uct_node[current]
 
         # 詰みのチェック
@@ -141,14 +145,14 @@ class MCTSPlayer(BasePlayer):
         child_index = current_node.child_index
 
         # UCB値が最大の手を求める
-        next_index = self.select_max_ucb_child(board, current_node)
+        next_index = self.select_max_ucb_child(gs, current_node)
         # 選んだ手を着手
-        board.push(child_move[next_index])
+        gs.push(child_move[next_index])
 
         # ノードの展開の確認
         if child_index[next_index] == NOT_EXPANDED:
             # ノードの展開(ノード展開処理の中でノードを評価する)
-            index = self.expand_node(board)
+            index = self.expand_node(gs)
             child_index[next_index] = index
             child_node = self.uct_node[index]
 
@@ -156,7 +160,7 @@ class MCTSPlayer(BasePlayer):
             result = 1 - child_node.value_win
         else:
             # 手番を入れ替えて1手深く読む
-            result = self.uct_search(board, child_index[next_index])
+            result = self.uct_search(gs, child_index[next_index])
 
         # 探索結果の反映
         current_node.win += result
@@ -165,13 +169,13 @@ class MCTSPlayer(BasePlayer):
         current_node.child_move_count[next_index] += 1
 
         # 手を戻す
-        board.pop()
+        gs.pop()
 
         return 1 - result
 
     # ノードを評価
-    def eval_node(self, board, index):
-        eval_features = [make_input_features_from_board(board)]
+    def eval_node(self, gs, index):
+        eval_features = [make_input_features_from_gs(gs)]
 
         x = Variable(cuda.to_gpu(np.array(eval_features, dtype=np.float32)))
         with chainer.no_backprop_mode():
@@ -224,7 +228,7 @@ class MCTSPlayer(BasePlayer):
         print('readyok')
 
     def go(self):
-        if self.board.is_game_over():
+        if self.gs.is_game_over():
             print('bestmove resign')
             return
 
@@ -232,7 +236,7 @@ class MCTSPlayer(BasePlayer):
         self.po_info.count = 0
 
         # 古いハッシュを削除
-        self.node_hash.delete_old_hash(self.board, self.uct_node)
+        self.node_hash.delete_old_hash(self.gs, self.uct_node)
 
         # 探索開始時刻の記録
         begin_time = time.time()
@@ -241,7 +245,7 @@ class MCTSPlayer(BasePlayer):
         self.po_info.halt = self.playout
 
         # ルートノードの展開
-        self.current_root = self.expand_node(self.board)
+        self.current_root = self.expand_node(self.gs)
 
         # 候補手が1つの場合は、その手を返す
         current_node = self.uct_node[self.current_root]
@@ -257,7 +261,7 @@ class MCTSPlayer(BasePlayer):
             # 探索回数を1回増やす
             self.po_info.count += 1
             # 1回プレイアウトする
-            self.uct_search(self.board, self.current_root)
+            self.uct_search(self.gs, self.current_root)
             # 探索を打ち切るか確認
             if self.interruption_check() or not self.node_hash.enough_size:
                 break
@@ -266,7 +270,7 @@ class MCTSPlayer(BasePlayer):
         finish_time = time.time() - begin_time
 
         child_move_count = current_node.child_move_count
-        if self.board.move_number < 10:
+        if self.gs.move_number < 10:
             # 訪問回数に応じた確率で手を選択する
             selected_index = np.random.choice(np.arange(child_num), p=child_move_count/sum(child_move_count))
         else:

@@ -103,4 +103,20 @@ class TestGameState(unittest.TestCase):
         outputs = np.linspace(0.0, 1.0, 315)
         outputs /= np.sum(outputs)
         self.gs.outputs_to_move_random(outputs)
-    
+
+    def test_board_id(self):
+        board = np.array([
+            [1, -1, -2, 1, 1],
+            [0] * 5,
+            [1, 1, 1, 0, 0],
+            [1, -1, -1, 1, 1],
+            [0, 1, 0, 0, 0],
+            [0] * 5,
+            [1, -1, 2, 1, 1]
+        ], dtype=np.int8)
+        board_id = GameState.board_id(board)
+        print(board_id)
+        board_2 = GameState.id_to_board(
+            board_id)
+        self.assertListEqual(board.tolist(),
+                             board_2.tolist())

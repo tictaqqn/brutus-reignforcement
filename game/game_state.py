@@ -1,4 +1,5 @@
 from typing import *
+from collections import deque
 from enum import IntEnum, auto, Enum
 import random
 import numpy as np
@@ -53,6 +54,8 @@ class GameState:
             [1, 1, 2, 1, 1]
         ], dtype=np.int8)
         self.turn = 1  # +が先攻
+        self.n_turn = 0
+        self.logs = deque()  # type: deque[Tuple[int, int]]
 
     def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力
@@ -68,6 +71,18 @@ class GameState:
 
     def __repr__(self) -> str:
         return str(self.board)
+
+    def pop(self) -> Optional[int]:
+        """一手前へ戻す. 戻した手も返す"""
+        try:
+            act_id, before_move_id = self.logs.pop()
+        except IndexError: # 空の時
+            return None
+        self.n_turn -= 1
+        self.turn *= -1
+        self.board = self.id_to_board(before_move_id)
+        return act_id   
+        
 
     @staticmethod
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
@@ -87,9 +102,12 @@ class GameState:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
+        before_move_id = self.board_id(self.board)
         self.board[i, j] = 0
         self.board[nxt[0], nxt[1]] = self.turn
         self.reverse(nxt)
+        self.logs.append((self.to_outputs_index(i, j, drc),
+                          before_move_id))
         return self.turn_change()
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
@@ -110,12 +128,20 @@ class GameState:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
+        before_move_id = self.board_id(self.board)
         self.board[i, j] = 0
         self.board[nxt[0], nxt[1]] = self.turn
         self.reverse(nxt)
+        try:
+            drc = DIRECTIONS_LIST.index(direction.tolist())
+        except ValueError:
+            drc = 8
+        self.logs.append((self.to_outputs_index(i, j, drc),
+                          before_move_id))
         return self.turn_change()
 
     def turn_change(self) -> Winner:
+        self.n_turn += 1
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
@@ -284,13 +310,41 @@ class GameState:
 
         return self.random_play(0)
 
-    def board_hash(self) -> int:
+    @staticmethod
+    def board_hash(board: np.ndarray) -> int:
         """ハッシュ関数。ZobristのようにXORを用いている"""
         xor_sum = 0
         for i in range(7):
             for j in range(5):
-                xor_sum ^= self.board[i, j] * 35 + i * 5 + j
+                xor_sum ^= board[i, j] * 35 + i * 5 + j
         return abs(xor_sum)
+
+    @staticmethod
+    def board_id(board: np.ndarray) -> int:
+        """ボードの状態をintにする"""
+        flat_board = board.flatten()
+        flat_board[2] = 0
+        flat_board[32] = 0
+        flat_board += 1  # マイナスをなくす
+
+        b_id = 0
+        h = 1
+        for x in flat_board:
+            b_id += x * h
+            h *= 3  # <<= 2
+        return b_id
+
+    @staticmethod
+    def id_to_board(b_id: int) -> np.ndarray:
+
+        flat_board = np.zeros(35, dtype=np.int8)  # type: np.ndarray
+        for i in range(34, -1, -1):
+            x, b_id = b_id % 3, b_id // 3
+            flat_board[i] = x
+        flat_board -= 1
+        flat_board[2] = -2
+        flat_board[32] = 2
+        return flat_board.reshape((7, 5))
 
     def generate_legal_moves(self) -> Iterable[int]:
         """有効手をyieldする"""

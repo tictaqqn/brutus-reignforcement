@@ -16,7 +16,7 @@ class UctNode:
         self.move_count = 0          # ノードの訪問回数
         self.win = 0.0               # 勝率の合計
         self.child_num = 0           # 子ノードの数
-        self.child_move = None       # 子ノードの指し手
+        self.child_move = None       # type: np.ndarray  # 子ノードの指し手
         self.child_index = None      # 子ノードのインデックス
         self.child_move_count = None  # 子ノードの訪問回数
         self.child_win = None        # 子ノードの勝率の合計
