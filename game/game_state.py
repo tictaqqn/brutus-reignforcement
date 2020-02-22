@@ -121,6 +121,7 @@ class GameState:
         return self.turn_change()
 
     def turn_change(self) -> Winner:
+        self.n_turns += 1
         if self.turn == 1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
@@ -134,7 +135,6 @@ class GameState:
             elif (self.board != 1).all():
                 return Winner.minus  # 後手勝利
         self.turn *= -1
-        self.n_turns += 1
         return Winner.not_ended
 
     def directionize(self, drc: Drc) -> np.ndarray:
