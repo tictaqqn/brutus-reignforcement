@@ -1,4 +1,5 @@
 ﻿from typing import List
+from game.game_state import GameState
 
 UCT_HASH_SIZE = 4096  # 2のn乗であること 1回の思考でのシミュレーション回数の10倍以上
 UCT_HASH_LIMIT = UCT_HASH_SIZE * 9 / 10
@@ -95,7 +96,7 @@ class NodeHash:
                 return UCT_HASH_SIZE
 
     # 使用中のノードを残す
-    def save_used_hash(self, board, uct_nodes: List[UctNode], index):
+    def save_used_hash(self, gs: GameState, uct_nodes: List[UctNode], index):
         self.node_hash[index].flag = True
         self.used += 1
 
@@ -105,22 +106,22 @@ class NodeHash:
         child_num = current_node.child_num
         for i in range(child_num):
             if child_index[i] != NOT_EXPANDED and self.node_hash[child_index[i]].flag == False:
-                board.push(child_move[i])
-                self.save_used_hash(board, uct_nodes, child_index[i])
-                board.pop()
+                gs.move_with_id(child_move[i])
+                self.save_used_hash(gs, uct_nodes, child_index[i])
+                gs.pop()
 
-    # 古いハッシュを削除
-    def delete_old_hash(self, board, uct_nodes: List[UctNode]):
+    def delete_old_hash(self, gs: GameState, uct_nodes: List[UctNode]):
+        """古いハッシュを削除"""
         # 現在の局面をルートとする局面以外を削除する
         root = self.find_same_hash_index(
-            board.zobrist_hash(), board.turn, board.move_number)
+            gs.board_hash(), gs.turn, gs.n_turns)
 
         self.used = 0
         for i in range(UCT_HASH_SIZE):
             self.node_hash[i].flag = False
 
         if root != UCT_HASH_SIZE:
-            self.save_used_hash(board, uct_nodes, root)
+            self.save_used_hash(gs, uct_nodes, root)
 
         self.enough_size = True
 
