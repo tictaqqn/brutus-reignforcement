@@ -138,3 +138,14 @@ class TestGameState(unittest.TestCase):
     #         board_id)
     #     self.assertListEqual(board.tolist(),
     #                          board_2.tolist())
+
+    def test_legal_moves(self):
+        np.random.seed(1)
+        for _ in range(10):
+            for _ in range(100):
+                legal_moves = list(self.gs.generate_legal_moves())
+                move = np.random.choice(legal_moves)
+                state = self.gs.move_with_id(move)
+                if state != Winner.not_ended:
+                    self.gs = GameState()
+            
