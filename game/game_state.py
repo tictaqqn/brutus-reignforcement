@@ -136,8 +136,6 @@ class GameState:
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
         """directionのベクトル方向への移動"""
-        if self.n_turns == 0 and direction[0] == -2:
-            raise ChoiceOfMovementError(f"先手の初手は2マス移動不可")
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
