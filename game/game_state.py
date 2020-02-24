@@ -199,7 +199,7 @@ class GameState:
                     break
                 pos += dirc
 
-    def valid_choice(self, i: int, j: int, drc: Drc) -> bool:
+    def _valid_choice(self, i: int, j: int, drc: Drc) -> bool:
         """手が有効かどうかを返す"""
         # if self.board[i, j] != self.turn:
         #     # raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
@@ -363,6 +363,7 @@ class GameState:
             h *= 3  # <<= 2
         return b_id
 
+    # TODO: fix bug
     @staticmethod
     def id_to_board(b_id: int) -> np.ndarray:
 
@@ -382,5 +383,5 @@ class GameState:
                 if self.board[i, j] != self.turn:
                     continue
                 for drc in range(9):
-                    if self.valid_choice(i, j, drc):
+                    if self._valid_choice(i, j, drc):
                         yield self.to_outputs_index(i, j, drc)
