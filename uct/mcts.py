@@ -1,21 +1,8 @@
 from typing import List
-import numpy as np
-import chainer
-from chainer import serializers
-from chainer import cuda, Variable
-import chainer.functions as F
-
-import shogi
-
-from pydlshogi.common import *
-from pydlshogi.features import *
-from pydlshogi.network.policy_value_resnet import *
-from pydlshogi.player.base_player import *
-from pydlshogi.uct.uct_node import *
-
 import math
 import time
 import copy
+import numpy as np
 
 from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
 from game.game_state import GameState
@@ -52,7 +39,7 @@ class MCTSPlayer(BasePlayer):
     def __init__(self):
         super().__init__()
         # モデルファイルのパス
-        self.modelfile = r'H:\src\python-dlshogi\model\model_policy_value_resnet'
+        # self.modelfile = r'H:\src\python-dlshogi\model\model_policy_value_resnet'
         self.model = None # モデル
 
         # ノードの情報
@@ -173,6 +160,7 @@ class MCTSPlayer(BasePlayer):
 
         return 1 - result
 
+    # TODO: 未実装
     # ノードを評価
     def eval_node(self, gs, index):
         eval_features = [make_input_features_from_gs(gs)]
@@ -217,6 +205,7 @@ class MCTSPlayer(BasePlayer):
         elif option[1] == 'temperature':
             self.temperature = int(option[3]) / 100
 
+    # TODO: 未実装
     def isready(self):
         # モデルをロード
         if self.model is None:

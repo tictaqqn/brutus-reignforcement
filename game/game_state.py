@@ -1,5 +1,6 @@
 from typing import *
 from collections import deque
+from copy import deepcopy
 from enum import IntEnum, auto, Enum
 import random
 import numpy as np
@@ -75,12 +76,12 @@ class GameState:
     def pop(self) -> Optional[int]:
         """一手前へ戻す. 戻した手も返す"""
         try:
-            act_id, before_move_id = self.logs.pop()
+            act_id, board = self.logs.pop()
         except IndexError: # 空の時
             return None
-        self.n_turn -= 1
+        self.n_turns -= 1
         self.turn *= -1
-        self.board = self.id_to_board(before_move_id)
+        self.board = board
         return act_id   
         
 
@@ -104,12 +105,12 @@ class GameState:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
-        before_move_id = self.board_id(self.board)
+        before_move_board = deepcopy(self.board)
         self.board[i, j] = 0
         self.board[nxt[0], nxt[1]] = self.turn
         self.reverse(nxt)
         self.logs.append((self.to_outputs_index(i, j, drc),
-                          before_move_id))
+                          before_move_board))
         return self.turn_change()
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
@@ -132,16 +133,16 @@ class GameState:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
-        before_move_id = self.board_id(self.board)
+        before_move_board = deepcopy(self.board)
         self.board[i, j] = 0
         self.board[nxt[0], nxt[1]] = self.turn
         self.reverse(nxt)
         try:
             drc = DIRECTIONS_LIST.index(direction.tolist())
         except ValueError:
-            drc = 8
+            drc = Drc.f2
         self.logs.append((self.to_outputs_index(i, j, drc),
-                          before_move_id))
+                          before_move_board))
         return self.turn_change()
 
     def turn_change(self) -> Winner:
