@@ -272,7 +272,7 @@ class MCTSPlayer:
         child_num = current_node.child_num
         child_move = current_node.child_move
         if child_num == 1:
-            print('bestmove', child_move[0].usi())
+            print('bestmove', child_move[0])
             return
 
         # プレイアウトを繰り返す
@@ -303,7 +303,7 @@ class MCTSPlayer:
         # for debug
         for i in range(child_num):
             print('{:3}:{:5} move_count:{:4} nn_rate:{:.5f} win_rate:{:.5f}'.format(
-                i, child_move[i].usi(), child_move_count[i],
+                i, child_move[i], child_move_count[i],
                 current_node.nnrate[i],
                 child_win[i] / child_move_count[i] if child_move_count[i] > 0 else 0))
 
@@ -328,9 +328,9 @@ class MCTSPlayer:
             int(finish_time * 1000),
             current_node.move_count,
             int(self.node_hash.get_usage_rate() * 1000),
-            cp, bestmove.usi()))
+            cp, bestmove))
 
-        print('bestmove', bestmove.usi())
+        print('bestmove', bestmove)
 
 
 if __name__ == "__main__":
