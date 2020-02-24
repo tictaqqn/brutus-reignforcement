@@ -4,7 +4,27 @@ from enum import IntEnum, auto, Enum
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
+from .consts import DEFAULT_RANDOM_ARRAY
 
+try:
+    from gmpy2 import popcount as pop_count
+    from gmpy2 import bit_scan1 as bit_scan
+except ImportError:
+    try:
+        from gmpy import popcount as pop_count
+        from gmpy import scan1 as bit_scan
+    except ImportError:
+        def pop_count(b):
+            return bin(b).count('1')
+
+        def bit_scan(b, n=0):
+            string = bin(b)
+            l = len(string)
+            r = string.rfind('1', 0, l - n)
+            if r == -1:
+                return -1
+            else:
+                return l - r - 1
 
 class Drc(IntEnum):
     B_fr = 0
@@ -310,13 +330,23 @@ class GameState:
 
         return self.random_play(0)
 
-    def board_hash(self) -> int:
+    def board_hash(self, array: list =None) -> int:
         """ハッシュ関数。ZobristのようにXORを用いている"""
-        xor_sum = 0
-        for i in range(7):
-            for j in range(5):
-                xor_sum ^= self.board[i, j] * 35 + i * 5 + j
-        return abs(xor_sum)
+        if array is None:
+            array = DEFAULT_RANDOM_ARRAY
+        i = self.board_id(self.board)
+        bit = bit_scan(i)
+        zobrist_hash = 0
+        while bit != -1 and bit is not None:
+            zobrist_hash ^= array[(2269 + bit) % 2286]
+            bit = bit_scan(i, bit + 1)
+        
+        i = self.n_turns
+        while bit != -1 and bit is not None:
+            zobrist_hash ^= array[bit % 2286]
+            bit = bit_scan(i, bit + 1)
+
+        return zobrist_hash
 
     @staticmethod
     def board_id(board: np.ndarray) -> int:
