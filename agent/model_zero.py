@@ -79,29 +79,6 @@ class ModelZero:
         x = Activation("relu")(x)
         return x
 
-    # 重みの学習
-    def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
-        inputs = np.zeros((batch_size, 2, 7, 5))
-        targets = np.zeros((batch_size, 315))
-        mini_batch = memory.sample(batch_size)
-
-        for i, (state_b, action_b, reward_b, next_state_b) in enumerate(mini_batch):
-            inputs[i] = state_b  # shape=(4, 5, 5)
-            target = reward_b  # type: int
-
-            # if not (next_state_b == 0).all():
-            # 価値計算（DDQNにも対応できるように、行動決定のQネットワークと価値関数のQネットワークは分離）
-            retmainQs = self.model.predict(next_state_b)
-            next_action = np.argmax(retmainQs)  # 最大の報酬を返す行動を選択する
-            target = reward_b + gamma * \
-                targetQN.model.predict(next_state_b)[0][next_action]
-
-            targets[i] = self.model.predict(state_b)[0][0]   # Qネットワークの出力
-            # 教師信号 action_b: int <= 100
-            targets[i, action_b] = target
-        # epochsは訓練データの反復回数、verbose=0は表示なしの設定
-        self.model.fit(inputs, targets, epochs=1, verbose=0)
-
     @staticmethod
     def fetch_digest(weight_path: str):
         if os.path.exists(weight_path):

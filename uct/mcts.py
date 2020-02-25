@@ -6,7 +6,7 @@ import numpy as np
 
 from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
 from game.game_state import GameState
-from agent.model import QNetwork
+from agent.model_zero import ModelZero
 from agent.config import Config
 
 # UCBのボーナス項の定数
@@ -42,9 +42,6 @@ class PlayoutInfo:
 
 class MCTSPlayer:
     def __init__(self):
-        super().__init__()
-        # モデルファイルのパス
-        # self.modelfile = r'H:\src\python-dlshogi\model\model_policy_value_resnet'
         self.model = None  # モデル
 
         # ノードの情報
@@ -62,14 +59,18 @@ class MCTSPlayer:
         self.gs = GameState()
 
     def load_model(self, model_config_path, weight_path) -> None:
-        self.model = QNetwork(config=Config())
+        self.model = ModelZero(config=Config())
         success_load = self.model.load(model_config_path, weight_path)
         if not success_load:
             raise FileNotFoundError(
                 f"{model_config_path} {weight_path}が読み込めませんでした")
 
-    # UCB値が最大の手を求める
+    def initialize_model(self) -> None:
+        self.model = ModelZero(config=Config())
+        self.model.build()
+
     def select_max_ucb_child(self, gs: GameState, current_node: UctNode):
+        """UCB値が最大の手を求める"""
         child_num = current_node.child_num
         child_win = current_node.child_win
         child_move_count = current_node.child_move_count
@@ -82,8 +83,8 @@ class MCTSPlayer:
 
         return np.argmax(ucb)
 
-    # ノードの展開
     def expand_node(self, gs: GameState):
+        """ノードの展開"""
         index = self.node_hash.find_same_hash_index(
             gs.board_hash(), gs.turn, gs.n_turns)
 
@@ -105,10 +106,10 @@ class MCTSPlayer:
 
         # 候補手の展開
         current_node.child_move = list(gs.generate_legal_moves())
-        print('new')
-        if 243 in current_node.child_move:
-            print(gs)
-        print(current_node.child_move)
+        # print('new')
+        # if 243 in current_node.child_move:
+        #     print(gs)
+        # print(current_node.child_move)
         child_num = len(current_node.child_move)
         current_node.child_index = [NOT_EXPANDED] * child_num
         current_node.child_move_count = np.zeros(child_num, dtype=np.int32)
@@ -126,8 +127,8 @@ class MCTSPlayer:
 
         return index
 
-    # 探索を打ち切るか確認
     def interruption_check(self):
+        """探索を打ち切るか確認"""
         child_num = self.uct_nodes[self.current_root].child_num
         child_move_count = self.uct_nodes[self.current_root].child_move_count
         rest = self.po_info.halt - self.po_info.count
@@ -142,8 +143,8 @@ class MCTSPlayer:
         else:
             return False
 
-    # UCT探索
     def uct_search(self, gs: GameState, current):
+        """UCT探索"""
         current_node = self.uct_nodes[current]
 
         # 詰みのチェック
@@ -157,12 +158,12 @@ class MCTSPlayer:
 
         # UCB値が最大の手を求める
         next_index = self.select_max_ucb_child(gs, current_node)
-        print('push')
-        if child_move[next_index] == 243:
-            print(gs)
-        print(child_move[next_index])
-        print(np.unravel_index(child_move[next_index], (7, 5, 9)))
-        print(list(gs.generate_legal_moves()))
+        # print('push')
+        # if child_move[next_index] == 243:
+        #     print(gs)
+        # print(child_move[next_index])
+        # print(np.unravel_index(child_move[next_index], (7, 5, 9)))
+        # print(list(gs.generate_legal_moves()))
         # 選んだ手を着手
         gs.move_with_id(child_move[next_index])
 
@@ -186,13 +187,13 @@ class MCTSPlayer:
         current_node.child_move_count[next_index] += 1
 
         # 手を戻す
-        print('pop')
+        # print('pop')
         gs.pop()
 
         return 1 - result
 
-    # ノードを評価
     def eval_node(self, gs: GameState, index):
+        """ノードを評価"""
         x = gs.to_inputs(flip=self.gs.turn == 1)
 
         # TODO: 未実装
@@ -331,6 +332,8 @@ class MCTSPlayer:
             cp, bestmove))
 
         print('bestmove', bestmove)
+
+        return bestmove
 
 
 if __name__ == "__main__":
