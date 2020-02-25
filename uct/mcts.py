@@ -207,10 +207,9 @@ class MCTSPlayer:
         """ノードを評価"""
         x = gs.to_inputs(flip=self.gs.turn == 1)
 
-        # TODO: 未実装
-        # logits, value = self.model.predict(x)
-        logits = np.zeros(315)
-        value = 0.3
+        logits, value = self.model.model.predict(x)
+        # logits = np.zeros(315)
+        # value = 0.3
 
         current_node = self.uct_nodes[index]
         child_num = current_node.child_num
@@ -225,7 +224,7 @@ class MCTSPlayer:
 
         # Boltzmann分布
         probabilities = softmax_temperature_with_normalize(
-            logits[legal_move_labels], self.temperature)
+            logits[0, legal_move_labels], self.temperature)
 
         # ノードの値を更新
         current_node.nnrate = probabilities
