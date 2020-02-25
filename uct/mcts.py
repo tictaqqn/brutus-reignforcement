@@ -5,7 +5,7 @@ import copy
 import numpy as np
 
 from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
-from game.game_state import GameState
+from game.game_state import GameState, Winner
 from agent.model_zero import ModelZero
 from agent.config import Config
 
@@ -41,7 +41,7 @@ class PlayoutInfo:
 
 
 class MCTSPlayer:
-    def __init__(self):
+    def __init__(self, my_side: int):
         self.model = None  # モデル
 
         # ノードの情報
@@ -57,6 +57,15 @@ class MCTSPlayer:
         # 温度パラメータ
         self.temperature = TEMPERATURE
         self.gs = GameState()
+
+        if my_side == 1:
+            self.my_side = Winner.plus
+            self.other_side = Winner.minus
+        elif my_side == -1:
+            self.other_side = Winner.plus
+            self.my_side = Winner.minus
+        else:
+            raise ValueError(‘Invalid my_side’)
 
     def load_model(self, model_config_path, weight_path) -> None:
         self.model = ModelZero(config=Config())
@@ -149,9 +158,11 @@ class MCTSPlayer:
 
         # 詰みのチェック
         # TODO: 勝利かどうかで変える
-        if current_node.child_num == 0 or gs.is_game_over():
+        winner = gs.get_winner()
+        if winner == self.my_side:
             return 1.0  # 反転して値を返すため1を返す
-
+        if winner == self.other_side:
+            return 0.0
         child_move = current_node.child_move
         child_move_count = current_node.child_move_count
         child_index = current_node.child_index
