@@ -361,12 +361,11 @@ class GameState:
             h *= 3  # <<= 2
         return b_id
 
-    # TODO: fix bug
     @staticmethod
     def id_to_board(b_id: int) -> np.ndarray:
 
         flat_board = np.zeros(35, dtype=np.int8)  # type: np.ndarray
-        for i in range(34, -1, -1):
+        for i in range(35):
             x, b_id = b_id % 3, b_id // 3
             flat_board[i] = x
         flat_board -= 1
