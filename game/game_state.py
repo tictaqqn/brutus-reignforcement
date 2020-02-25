@@ -26,6 +26,7 @@ except ImportError:
             else:
                 return l - r - 1
 
+
 class Drc(IntEnum):
     B_fr = 0
     B_r = 1
@@ -107,6 +108,10 @@ class GameState:
         action_logs = list(map(lambda x: x[0], self.logs))
         return np.array(action_logs, dtype=int)
 
+    def get_board_logs(self) -> np.ndarray:
+        board_logs = list(map(lambda x: self.board_id(x[1]), self.logs))
+        return np.array(board_logs, dtype=int)
+
     @staticmethod
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
@@ -152,7 +157,7 @@ class GameState:
 
     def turn_change(self) -> Winner:
         self.n_turns += 1
-        self.turn *= -1 # 勝利判定時にもターン変更するようにした
+        self.turn *= -1  # 勝利判定時にもターン変更するようにした
         return self.get_winner()
 
     def get_winner(self) -> Winner:
@@ -332,7 +337,7 @@ class GameState:
 
         return self.random_play(0)
 
-    def board_hash(self, array: list =None) -> int:
+    def board_hash(self, array: list = None) -> int:
         """ハッシュ関数。ZobristのようにXORを用いている"""
         if array is None:
             array = DEFAULT_RANDOM_ARRAY
@@ -342,7 +347,7 @@ class GameState:
         while bit != -1 and bit is not None:
             zobrist_hash ^= array[(2269 + bit) % 2286]
             bit = bit_scan(i, bit + 1)
-        
+
         i = self.n_turns
         while bit != -1 and bit is not None:
             zobrist_hash ^= array[bit % 2286]
