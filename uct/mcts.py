@@ -65,7 +65,7 @@ class MCTSPlayer:
             self.other_side = Winner.plus
             self.my_side = Winner.minus
         else:
-            raise ValueError(‘Invalid my_side’)
+            raise ValueError('Invalid my_side')
 
     def load_model(self, model_config_path, weight_path) -> None:
         self.model = ModelZero(config=Config())
@@ -344,7 +344,7 @@ class MCTSPlayer:
 
         print('bestmove', bestmove)
 
-        return bestmove
+        return bestmove, best_wp
 
 
 if __name__ == "__main__":
