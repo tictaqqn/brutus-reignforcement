@@ -103,6 +103,10 @@ class GameState:
         self.board = board
         return act_id
 
+    def get_action_logs(self) -> np.ndarray:
+        action_logs = list(map(lambda x: x[0], self.logs))
+        return np.array(action_logs, dtype=int)
+
     @staticmethod
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
