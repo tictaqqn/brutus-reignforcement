@@ -103,4 +103,48 @@ class TestGameState(unittest.TestCase):
         outputs = np.linspace(0.0, 1.0, 315)
         outputs /= np.sum(outputs)
         self.gs.outputs_to_move_random(outputs)
-    
+
+    def test_board_pop(self):
+        for n in range(10):
+            for _ in range(n):
+                self.gs.random_play(0)
+            for _ in range(n):
+                self.gs.pop()
+            self.assertListEqual(self.gs.board.tolist(),
+                                 np.array([
+                                     [-1, -1, -2, -1, -1],
+                                     [0, -1, 0, -1, 0],
+                                     [0] * 5,
+                                     [0] * 5,
+                                     [0] * 5,
+                                     [0, 1, 0, 1, 0],
+                                     [1, 1, 2, 1, 1]
+                                 ]).tolist())
+        
+
+    def test_board_id(self):
+        board = np.array([
+            [1, -1, -2, 1, 1],
+            [0] * 5,
+            [1, 1, 1, 0, 0],
+            [1, -1, -1, 1, 1],
+            [0, 1, 0, 0, 0],
+            [0] * 5,
+            [1, -1, 2, 1, 1]
+        ], dtype=np.int8)
+        board_id = GameState.board_id(board)
+        board_2 = GameState.id_to_board(
+            board_id)
+        self.assertListEqual(board.tolist(),
+                             board_2.tolist())
+
+    def test_legal_moves(self):
+        np.random.seed(1)
+        for _ in range(10):
+            for _ in range(100):
+                legal_moves = list(self.gs.generate_legal_moves())
+                move = np.random.choice(legal_moves)
+                state = self.gs.move_with_id(move)
+                if state != Winner.not_ended:
+                    self.gs = GameState()
+            

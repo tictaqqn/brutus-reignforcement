@@ -1,9 +1,30 @@
 from typing import *
+from collections import deque
 from enum import IntEnum, auto, Enum
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
+from .consts import DEFAULT_RANDOM_ARRAY
 
+try:
+    from gmpy2 import popcount as pop_count
+    from gmpy2 import bit_scan1 as bit_scan
+except ImportError:
+    try:
+        from gmpy import popcount as pop_count
+        from gmpy import scan1 as bit_scan
+    except ImportError:
+        def pop_count(b):
+            return bin(b).count('1')
+
+        def bit_scan(b, n=0):
+            string = bin(b)
+            l = len(string)
+            r = string.rfind('1', 0, l - n)
+            if r == -1:
+                return -1
+            else:
+                return l - r - 1
 
 class Drc(IntEnum):
     B_fr = 0
@@ -53,7 +74,8 @@ class GameState:
             [1, 1, 2, 1, 1]
         ], dtype=np.int8)
         self.turn = 1  # +が先攻
-        self.n_turns = 0  # ターン経過数
+        self.n_turns = 0
+        self.logs = deque()  # type: deque[Tuple[int, int]]
 
     def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力
@@ -69,6 +91,17 @@ class GameState:
 
     def __repr__(self) -> str:
         return str(self.board)
+
+    def pop(self) -> Optional[int]:
+        """一手前へ戻す. 戻した手も返す"""
+        try:
+            act_id, board = self.logs.pop()
+        except IndexError:  # 空の時
+            return None
+        self.n_turns -= 1
+        self.turn *= -1
+        self.board = board
+        return act_id
 
     @staticmethod
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
@@ -90,39 +123,36 @@ class GameState:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 raise ChoiceOfMovementError(f"間に自コマあり {between}")
+        before_move_board = self.board.copy()
         self.board[i, j] = 0
         self.board[nxt[0], nxt[1]] = self.turn
         self.reverse(nxt)
+        self.logs.append((self.to_outputs_index(i, j, drc),
+                          before_move_board))
         return self.turn_change()
+
+    def move_with_id(self, action: int) -> Winner:
+        return self.move(*np.unravel_index(action, (7, 5, 9)))
 
     def move_d_vec(self, i: int, j: int, direction: np.array) -> Winner:
         """directionのベクトル方向への移動"""
-        if self.n_turns == 0 and direction[0] == -2:
-            raise ChoiceOfMovementError(f"先手の初手は2マス移動不可")
         if direction[0] == 2 * self.turn:
             raise ChoiceOfMovementError(f"後ろ2コマ移動不可{direction}")
         if abs(direction[0]) == 2 and direction[1] != 0:
             raise ChoiceOfMovementError(f"斜め2コマ移動不可{direction}")
-        if self.board[i, j] != self.turn:
-            raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
-        # direction = self.directionize(drc)
-        nxt = np.array([i, j]) + direction
-        if not self.boundary_check(nxt):
-            raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
-        if self.board[nxt[0], nxt[1]] != 0:
-            raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
-        if abs(direction[0]) == 2:
-            between = np.array([i, j]) + direction // 2
-            if self.board[between[0], between[1]] == self.turn:
-                raise ChoiceOfMovementError(f"間に自コマあり {between}")
-        self.board[i, j] = 0
-        self.board[nxt[0], nxt[1]] = self.turn
-        self.reverse(nxt)
-        return self.turn_change()
+        try:
+            drc = DIRECTIONS_LIST.index(direction.tolist())
+        except ValueError:
+            drc = Drc.f2
+        return self.move(i, j, drc)
 
     def turn_change(self) -> Winner:
         self.n_turns += 1
-        if self.turn == 1:
+        self.turn *= -1 # 勝利判定時にもターン変更するようにした
+        return self.get_winner()
+
+    def get_winner(self) -> Winner:
+        if self.turn == -1:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
                 return Winner.minus  # 後手勝利
@@ -134,8 +164,13 @@ class GameState:
                 return Winner.plus  # 先手勝利
             elif (self.board != 1).all():
                 return Winner.minus  # 後手勝利
-        self.turn *= -1
         return Winner.not_ended
+
+    def is_game_over(self) -> bool:
+        state = self.get_winner()
+        if state == Winner.not_ended:
+            return False
+        return True
 
     def directionize(self, drc: Drc) -> np.ndarray:
         if drc == 8:
@@ -162,20 +197,23 @@ class GameState:
                     break
                 pos += dirc
 
-    def valid_choice(self, i: int, j: int, drc: Drc) -> bool:
+    def _valid_choice(self, i: int, j: int, drc: Drc) -> bool:
         """手が有効かどうかを返す"""
         # if self.board[i, j] != self.turn:
         #     # raise ChoiceOfMovementError(f"選択したコマが王か色違いか存在しない {i, j}")
         #     return False
         direction = self.directionize(drc)
         nxt = np.array([i, j]) + direction
+        if self.n_turns == 0 and drc == Drc.f2:
+            # raise ChoiceOfMovementError(f"先手の初手は2マス移動不可")
+            return False
         if not self.boundary_check(nxt):
             # raise ChoiceOfMovementError(f"外側への飛び出し {nxt}")
             return False
         if self.board[nxt[0], nxt[1]] != 0:
             # raise ChoiceOfMovementError(f"移動先にコマあり {nxt}")
             return False
-        if drc == Drc.B_f2 or drc == Drc.W_f2:
+        if drc == Drc.f2:
             between = np.array([i, j]) + direction // 2
             if self.board[between[0], between[1]] == self.turn:
                 # raise ChoiceOfMovementError(f"間に自コマあり {between}")
@@ -290,13 +328,50 @@ class GameState:
 
         return self.random_play(0)
 
-    def board_hash(self) -> int:
+    def board_hash(self, array: list =None) -> int:
         """ハッシュ関数。ZobristのようにXORを用いている"""
-        xor_sum = 0
-        for i in range(7):
-            for j in range(5):
-                xor_sum ^= self.board[i, j] * 35 + i * 5 + j
-        return abs(xor_sum)
+        if array is None:
+            array = DEFAULT_RANDOM_ARRAY
+        i = self.board_id(self.board)
+        bit = bit_scan(i)
+        zobrist_hash = 0
+        while bit != -1 and bit is not None:
+            zobrist_hash ^= array[(2269 + bit) % 2286]
+            bit = bit_scan(i, bit + 1)
+        
+        i = self.n_turns
+        while bit != -1 and bit is not None:
+            zobrist_hash ^= array[bit % 2286]
+            bit = bit_scan(i, bit + 1)
+
+        return zobrist_hash
+
+    @staticmethod
+    def board_id(board: np.ndarray) -> int:
+        """ボードの状態をintにする"""
+        flat_board = board.flatten()
+        flat_board[2] = 0
+        flat_board[32] = 0
+        flat_board += 1  # マイナスをなくす
+
+        b_id = 0
+        h = 1
+        for x in flat_board:
+            b_id += x * h
+            h *= 3  # <<= 2
+        return b_id
+
+    @staticmethod
+    def id_to_board(b_id: int) -> np.ndarray:
+
+        flat_board = np.zeros(35, dtype=np.int8)  # type: np.ndarray
+        for i in range(35):
+            x, b_id = b_id % 3, b_id // 3
+            flat_board[i] = x
+        flat_board -= 1
+        flat_board[2] = -2
+        flat_board[32] = 2
+        return flat_board.reshape((7, 5))
 
     def generate_legal_moves(self) -> Iterable[int]:
         """有効手をyieldする"""
@@ -305,5 +380,5 @@ class GameState:
                 if self.board[i, j] != self.turn:
                     continue
                 for drc in range(9):
-                    if self.valid_choice(i, j, drc):
+                    if self._valid_choice(i, j, drc):
                         yield self.to_outputs_index(i, j, drc)

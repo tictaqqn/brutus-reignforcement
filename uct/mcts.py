@@ -1,20 +1,13 @@
-import numpy as np
-import chainer
-from chainer import serializers
-from chainer import cuda, Variable
-import chainer.functions as F
-
-import shogi
-
-from pydlshogi.common import *
-from pydlshogi.features import *
-from pydlshogi.network.policy_value_resnet import *
-from pydlshogi.player.base_player import *
-from pydlshogi.uct.uct_node import *
-
+from typing import List
 import math
 import time
 import copy
+import numpy as np
+
+from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
+from game.game_state import GameState
+from agent.model import QNetwork
+from agent.config import Config
 
 # UCBのボーナス項の定数
 C_PUCT = 1.0
@@ -25,35 +18,40 @@ RESIGN_THRESHOLD = 0.01
 # 温度パラメータ
 TEMPERATURE = 1.0
 
-def softmax_temperature_with_normalize(logits, temperature):
+
+def softmax_temperature_with_normalize(logits, temperature: float):
     # 温度パラメータを適用
     logits /= temperature
 
     # 確率を計算(オーバーフローを防止するため最大値で引く)
-    max_logit = max(logits)
+    max_logit = np.max(logits)
     probabilities = np.exp(logits - max_logit)
 
     # 合計が1になるように正規化
-    sum_probabilities = sum(probabilities)
+    sum_probabilities = np.sum(probabilities)
     probabilities /= sum_probabilities
 
     return probabilities
 
+
 class PlayoutInfo:
     def __init__(self):
-        self.halt = 0 # 探索を打ち切る回数
-        self.count = 0 # 現在の探索回数
+        self.halt = 0  # 探索を打ち切る回数
+        self.count = 0  # 現在の探索回数
 
-class MCTSPlayer(BasePlayer):
+
+class MCTSPlayer:
     def __init__(self):
         super().__init__()
         # モデルファイルのパス
-        self.modelfile = r'H:\src\python-dlshogi\model\model_policy_value_resnet'
-        self.model = None # モデル
+        # self.modelfile = r'H:\src\python-dlshogi\model\model_policy_value_resnet'
+        self.model = None  # モデル
 
         # ノードの情報
         self.node_hash = NodeHash()
-        self.uct_nodes = [UctNode() for _ in range(UCT_HASH_SIZE)]
+        self.node_hash.initialize()
+        self.uct_nodes = [UctNode() for _ in range(
+            UCT_HASH_SIZE)]  # type: List[UctNode]
 
         # プレイアウト回数管理
         self.po_info = PlayoutInfo()
@@ -61,33 +59,44 @@ class MCTSPlayer(BasePlayer):
 
         # 温度パラメータ
         self.temperature = TEMPERATURE
+        self.gs = GameState()
+
+    def load_model(self, model_config_path, weight_path) -> None:
+        self.model = QNetwork(config=Config())
+        success_load = self.model.load(model_config_path, weight_path)
+        if not success_load:
+            raise FileNotFoundError(
+                f"{model_config_path} {weight_path}が読み込めませんでした")
 
     # UCB値が最大の手を求める
-    def select_max_ucb_child(self, board, current_node):
+    def select_max_ucb_child(self, gs: GameState, current_node: UctNode):
         child_num = current_node.child_num
         child_win = current_node.child_win
         child_move_count = current_node.child_move_count
 
-        q = np.divide(child_win, child_move_count, out=np.repeat(np.float32(0.5), child_num), where=child_move_count != 0)
-        u = np.sqrt(np.float32(current_node.move_count)) / (1 + child_move_count)
+        q = np.divide(child_win, child_move_count, out=np.repeat(
+            np.float32(0.5), child_num), where=child_move_count != 0)
+        u = np.sqrt(np.float32(current_node.move_count)) / \
+            (1 + child_move_count)
         ucb = q + C_PUCT * current_node.nnrate * u
 
         return np.argmax(ucb)
 
-
     # ノードの展開
-    def expand_node(self, board):
-        index = self.node_hash.find_same_hash_index(board.zobrist_hash(), board.turn, board.move_number)
+    def expand_node(self, gs: GameState):
+        index = self.node_hash.find_same_hash_index(
+            gs.board_hash(), gs.turn, gs.n_turns)
 
         # 合流先が検知できれば, それを返す
-        if not index == UCT_HASH_SIZE:
+        if index != UCT_HASH_SIZE:
             return index
-    
+
         # 空のインデックスを探す
-        index = self.node_hash.search_empty_index(board.zobrist_hash(), board.turn, board.move_number)
+        index = self.node_hash.search_empty_index(
+            gs.board_hash(), gs.turn, gs.n_turns)
 
         # 現在のノードの初期化
-        current_node = self.uct_node[index]
+        current_node = self.uct_nodes[index]
         current_node.move_count = 0
         current_node.win = 0.0
         current_node.child_num = 0
@@ -95,9 +104,13 @@ class MCTSPlayer(BasePlayer):
         current_node.value_win = 0.0
 
         # 候補手の展開
-        current_node.child_move = [move for move in board.legal_moves]
+        current_node.child_move = list(gs.generate_legal_moves())
+        print('new')
+        if 243 in current_node.child_move:
+            print(gs)
+        print(current_node.child_move)
         child_num = len(current_node.child_move)
-        current_node.child_index = [NOT_EXPANDED for _ in range(child_num)]
+        current_node.child_index = [NOT_EXPANDED] * child_num
         current_node.child_move_count = np.zeros(child_num, dtype=np.int32)
         current_node.child_win = np.zeros(child_num, dtype=np.float32)
 
@@ -106,7 +119,7 @@ class MCTSPlayer(BasePlayer):
 
         # ノードを評価
         if child_num > 0:
-            self.eval_node(board, index)
+            self.eval_node(gs, index)
         else:
             current_node.value_win = 0.0
             current_node.evaled = True
@@ -115,12 +128,13 @@ class MCTSPlayer(BasePlayer):
 
     # 探索を打ち切るか確認
     def interruption_check(self):
-        child_num = self.uct_node[self.current_root].child_num
-        child_move_count = self.uct_node[self.current_root].child_move_count
+        child_num = self.uct_nodes[self.current_root].child_num
+        child_move_count = self.uct_nodes[self.current_root].child_move_count
         rest = self.po_info.halt - self.po_info.count
 
         # 探索回数が最も多い手と次に多い手を求める
-        second, first = child_move_count[np.argpartition(child_move_count, -2)[-2:]]
+        second, first = child_move_count[np.argpartition(
+            child_move_count, -2)[-2:]]
 
         # 残りの探索を全て次善手に費やしても最善手を超えられない場合は探索を打ち切る
         if first - second > rest:
@@ -129,34 +143,41 @@ class MCTSPlayer(BasePlayer):
             return False
 
     # UCT探索
-    def uct_search(self, board, current):
-        current_node = self.uct_node[current]
+    def uct_search(self, gs: GameState, current):
+        current_node = self.uct_nodes[current]
 
         # 詰みのチェック
-        if current_node.child_num == 0:
-            return 1.0 # 反転して値を返すため1を返す
+        # TODO: 勝利かどうかで変える
+        if current_node.child_num == 0 or gs.is_game_over():
+            return 1.0  # 反転して値を返すため1を返す
 
         child_move = current_node.child_move
         child_move_count = current_node.child_move_count
         child_index = current_node.child_index
 
         # UCB値が最大の手を求める
-        next_index = self.select_max_ucb_child(board, current_node)
+        next_index = self.select_max_ucb_child(gs, current_node)
+        print('push')
+        if child_move[next_index] == 243:
+            print(gs)
+        print(child_move[next_index])
+        print(np.unravel_index(child_move[next_index], (7, 5, 9)))
+        print(list(gs.generate_legal_moves()))
         # 選んだ手を着手
-        board.push(child_move[next_index])
+        gs.move_with_id(child_move[next_index])
 
         # ノードの展開の確認
         if child_index[next_index] == NOT_EXPANDED:
             # ノードの展開(ノード展開処理の中でノードを評価する)
-            index = self.expand_node(board)
+            index = self.expand_node(gs)
             child_index[next_index] = index
-            child_node = self.uct_node[index]
+            child_node = self.uct_nodes[index]
 
             # valueを勝敗として返す
             result = 1 - child_node.value_win
         else:
             # 手番を入れ替えて1手深く読む
-            result = self.uct_search(board, child_index[next_index])
+            result = self.uct_search(gs, child_index[next_index])
 
         # 探索結果の反映
         current_node.win += result
@@ -165,22 +186,21 @@ class MCTSPlayer(BasePlayer):
         current_node.child_move_count[next_index] += 1
 
         # 手を戻す
-        board.pop()
+        print('pop')
+        gs.pop()
 
         return 1 - result
 
     # ノードを評価
-    def eval_node(self, board, index):
-        eval_features = [make_input_features_from_board(board)]
+    def eval_node(self, gs: GameState, index):
+        x = gs.to_inputs(flip=self.gs.turn == 1)
 
-        x = Variable(cuda.to_gpu(np.array(eval_features, dtype=np.float32)))
-        with chainer.no_backprop_mode():
-            y1, y2 = self.model(x)
+        # TODO: 未実装
+        # logits, value = self.model.predict(x)
+        logits = np.zeros(315)
+        value = 0.3
 
-            logits = cuda.to_cpu(y1.data)[0]
-            value = cuda.to_cpu(F.sigmoid(y2).data)[0]
-
-        current_node = self.uct_node[index]
+        current_node = self.uct_nodes[index]
         child_num = current_node.child_num
         child_move = current_node.child_move
         color = self.node_hash[index].color
@@ -188,10 +208,12 @@ class MCTSPlayer(BasePlayer):
         # 合法手でフィルター
         legal_move_labels = []
         for i in range(child_num):
-            legal_move_labels.append(make_output_label(child_move[i], color))
+            legal_move_labels.append(
+                child_move[i])
 
         # Boltzmann分布
-        probabilities = softmax_temperature_with_normalize(logits[legal_move_labels], self.temperature)
+        probabilities = softmax_temperature_with_normalize(
+            logits[legal_move_labels], self.temperature)
 
         # ノードの値を更新
         current_node.nnrate = probabilities
@@ -201,8 +223,10 @@ class MCTSPlayer(BasePlayer):
     def usi(self):
         print('id name mcts_player')
         print('option name modelfile type string default ' + self.modelfile)
-        print('option name playout type spin default ' + str(self.playout) + ' min 100 max 10000')
-        print('option name temperature type spin default ' + str(int(self.temperature * 100)) + ' min 10 max 1000')
+        print('option name playout type spin default ' +
+              str(self.playout) + ' min 100 max 10000')
+        print('option name temperature type spin default ' +
+              str(int(self.temperature * 100)) + ' min 10 max 1000')
         print('usiok')
 
     def setoption(self, option):
@@ -213,18 +237,18 @@ class MCTSPlayer(BasePlayer):
         elif option[1] == 'temperature':
             self.temperature = int(option[3]) / 100
 
-    def isready(self):
-        # モデルをロード
-        if self.model is None:
-            self.model = PolicyValueResnet()
-            self.model.to_gpu()
-        serializers.load_npz(self.modelfile, self.model)
-        # ハッシュを初期化
-        self.node_hash.initialize()
-        print('readyok')
+    # def isready(self):
+    #     # モデルをロード
+    #     if self.model is None:
+    #         self.model = PolicyValueResnet()
+    #         self.model.to_gpu()
+    #     serializers.load_npz(self.modelfile, self.model)
+    #     # ハッシュを初期化
+    #     self.node_hash.initialize()
+    #     print('readyok')
 
     def go(self):
-        if self.board.is_game_over():
+        if self.gs.is_game_over():
             print('bestmove resign')
             return
 
@@ -232,7 +256,7 @@ class MCTSPlayer(BasePlayer):
         self.po_info.count = 0
 
         # 古いハッシュを削除
-        self.node_hash.delete_old_hash(self.board, self.uct_node)
+        self.node_hash.delete_old_hash(self.gs, self.uct_nodes)
 
         # 探索開始時刻の記録
         begin_time = time.time()
@@ -241,14 +265,14 @@ class MCTSPlayer(BasePlayer):
         self.po_info.halt = self.playout
 
         # ルートノードの展開
-        self.current_root = self.expand_node(self.board)
+        self.current_root = self.expand_node(self.gs)
 
         # 候補手が1つの場合は、その手を返す
-        current_node = self.uct_node[self.current_root]
+        current_node = self.uct_nodes[self.current_root]
         child_num = current_node.child_num
         child_move = current_node.child_move
         if child_num == 1:
-            print('bestmove', child_move[0].usi())
+            print('bestmove', child_move[0])
             return
 
         # プレイアウトを繰り返す
@@ -257,7 +281,7 @@ class MCTSPlayer(BasePlayer):
             # 探索回数を1回増やす
             self.po_info.count += 1
             # 1回プレイアウトする
-            self.uct_search(self.board, self.current_root)
+            self.uct_search(self.gs, self.current_root)
             # 探索を打ち切るか確認
             if self.interruption_check() or not self.node_hash.enough_size:
                 break
@@ -266,9 +290,10 @@ class MCTSPlayer(BasePlayer):
         finish_time = time.time() - begin_time
 
         child_move_count = current_node.child_move_count
-        if self.board.move_number < 10:
+        if self.gs.n_turns < 10:
             # 訪問回数に応じた確率で手を選択する
-            selected_index = np.random.choice(np.arange(child_num), p=child_move_count/sum(child_move_count))
+            selected_index = np.random.choice(
+                np.arange(child_num), p=child_move_count/np.sum(child_move_count))
         else:
             # 訪問回数最大の手を選択する
             selected_index = np.argmax(child_move_count)
@@ -278,7 +303,7 @@ class MCTSPlayer(BasePlayer):
         # for debug
         for i in range(child_num):
             print('{:3}:{:5} move_count:{:4} nn_rate:{:.5f} win_rate:{:.5f}'.format(
-                i, child_move[i].usi(), child_move_count[i],
+                i, child_move[i], child_move_count[i],
                 current_node.nnrate[i],
                 child_win[i] / child_move_count[i] if child_move_count[i] > 0 else 0))
 
@@ -303,6 +328,13 @@ class MCTSPlayer(BasePlayer):
             int(finish_time * 1000),
             current_node.move_count,
             int(self.node_hash.get_usage_rate() * 1000),
-            cp, bestmove.usi()))
+            cp, bestmove))
 
-        print('bestmove', bestmove.usi())
+        print('bestmove', bestmove)
+
+
+if __name__ == "__main__":
+    player = MCTSPlayer()
+    # player.load_model("results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.json",
+    #                   "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.h5")
+    player.go()
