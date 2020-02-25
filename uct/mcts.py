@@ -343,7 +343,15 @@ class MCTSPlayer:
 
         print('bestmove', bestmove)
 
-        return bestmove, best_wp
+        arr = child_move_count_as_output_array_shape(child_move, child_move_count)
+
+        return bestmove, best_wp, arr
+
+def child_move_count_as_output_array_shape(child_move, child_move_count):
+    arr = np.zeros(315, dtype=int)
+    for i, c in zip(child_move, child_move_count):
+        arr[i] = c
+    return arr
 
 
 if __name__ == "__main__":
