@@ -34,7 +34,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             # action_logs.append(best_action)
             wp_logs.append(best_wp)
             arr_logs.append(arr)
-            board_logs.append(GameState.board_id(gs.board))
+            board_logs.append(gs.board.copy())
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
@@ -44,7 +44,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             # action_logs.append(best_action)
             wp_logs.append(best_wp)
             arr_logs.append(arr)
-            board_logs.append(GameState.board_id(gs.board))
+            board_logs.append(gs.board.copy())
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
