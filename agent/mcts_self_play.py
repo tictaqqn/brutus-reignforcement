@@ -8,8 +8,8 @@ from uct.mcts import MCTSPlayer
 
 def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=None):
 
-    player_plus = MCTSPlayer()
-    player_minus = MCTSPlayer()
+    player_plus = MCTSPlayer(1)
+    player_minus = MCTSPlayer(-1)
     if model_config_path is None or weight_path is None:
         player_plus.initialize_model()
         player_minus.initialize_model()
@@ -18,7 +18,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
                             weight_path)
         player_minus.load_model(model_config_path,
                                 weight_path)
-    # TODO: MCTSPlayerにどちらが先行か認識させる
+    # TODO: MCTSPlayerにどちらが先手か認識させる
     action_logs = []
 
     for n in range(n_games):
