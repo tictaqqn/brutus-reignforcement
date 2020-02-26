@@ -23,6 +23,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
     wp_logs = []
     arr_logs = []
     board_logs = []
+    plus_turn_logs = []
 
     for n in range(n_games):
         gs = GameState()
@@ -35,6 +36,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             wp_logs.append(best_wp)
             arr_logs.append(arr)
             board_logs.append(gs.board.copy())
+            plus_turn_logs.append(True)
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
@@ -45,6 +47,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             wp_logs.append(best_wp)
             arr_logs.append(arr)
             board_logs.append(gs.board.copy())
+            plus_turn_logs.append(False)
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
@@ -58,7 +61,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
     #         action=action_logs, wp=wp_logs, arr=arr_logs, board=board_logs
     #     ), f)
     # np.savezだとメモリ確保に時間がかかるかもしれない
-    np.savez(f'results/bababax/kifu/{d}.npz', wp=wp_logs, arr=arr_logs, board=board_logs)
+    np.savez(f'results/bababax/kifu/{d}.npz', wp=wp_logs, pi_mcts=arr_logs, board=board_logs, plus_turn=plus_turn_logs)
     # print(action_logs)
     print(wp_logs)
     print(arr_logs[0])

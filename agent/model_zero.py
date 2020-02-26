@@ -17,7 +17,7 @@ from keras.layers.core import Activation, Dense, Flatten
 from keras.layers.merge import Add
 from keras.layers.normalization import BatchNormalization
 from keras.losses import mean_squared_error
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from keras.regularizers import l2
 
 from .config import Config, QLearnConfig
@@ -25,6 +25,26 @@ from game.game_state import GameState, Winner
 
 
 logger = getLogger(__name__)
+
+def objective_function_for_policy(y_true, y_pred):
+    # can use categorical_crossentropy??
+    return K.sum(-y_true * K.log(y_pred + K.epsilon()), axis=-1)
+
+
+def objective_function_for_value(y_true, y_pred):
+    return mean_squared_error(y_true, y_pred)
+
+
+def update_learning_rate(self, total_steps):
+    # The deepmind paper says
+    # ~400k: 1e-2
+    # 400k~600k: 1e-3
+    # 600k~: 1e-4
+
+    lr = self.decide_learning_rate(total_steps)
+    if lr:
+        K.set_value(self.optimizer.lr, lr)
+        logger.debug(f"total step={total_steps}, set learning rate to {lr}")
 
 
 class ModelZero:
@@ -62,8 +82,13 @@ class ModelZero:
                           activation="tanh", name="value_out")(x)
 
         self.model = Model(in_x, [policy_out, value_out], name="slipe_model")
-        self.model.compile(loss='mse', optimizer=Adam(lr=mc.learning_rate))
+        self.compile_model()
         self.model.summary()
+
+    def compile_model(self):
+        self.optimizer = SGD(lr=1e-2, momentum=0.9)
+        losses = [objective_function_for_policy, objective_function_for_value]
+        self.model.compile(optimizer=self.optimizer, loss=losses)
 
     def _build_residual_block(self, x):
         mc = self.config.model
@@ -78,6 +103,26 @@ class ModelZero:
         x = Add()([in_x, x])
         x = Activation("relu")(x)
         return x
+
+    # 重みの学習
+    def replay(self, wps, pi_mcts, board_logs, plus_turns, batch_size: int, beta: float) -> None:
+        inputs = np.zeros((batch_size, 2, 7, 5))
+        policy_true = np.zeros((batch_size, 315))
+        values_true = np.zeros((batch_size)) 
+        indices = np.random.choice(
+            np.arange(len(wps)), size=batch_size, replace=False)
+        mini_batch = [(wps[i], pi_mcts[i], board_logs[i], plus_turns[i]) for i in indices]
+
+        for i, (wp, pi, board, plus_turn) in enumerate(mini_batch):
+            gs = GameState()
+            gs.board = board
+            inputs[i] = gs.to_inputs(flip=not plus_turn) # shape=(4, 5, 5)
+            policy_true[i] = pi ** beta
+            values_true[i] = wp
+
+        # epochsは訓練データの反復回数、verbose=0は表示なしの設定
+        self.model.fit(inputs, [policy_true, values_true], epochs=1, verbose=0)
+
 
     @staticmethod
     def fetch_digest(weight_path: str):

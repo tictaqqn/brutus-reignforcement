@@ -298,6 +298,25 @@ class GameState:
     @staticmethod
     def to_outputs_index(i: int, j: int, drc: Drc) -> int:
         return i * 45 + j * 9 + drc
+    
+    @staticmethod
+    def flip_turn_outputs_index(index: int) -> int:
+        i, j, drc = np.unravel_index(index, (7, 5, 9))
+        i = 6 - i
+        if drc != Drc.f2:
+            d = DIRECTIONS_LIST[drc]
+            d[0] = - d[0]
+            drc = DIRECTIONS_LIST.index(d)
+        return GameState.to_outputs_index(i, j, drc)
+
+    @staticmethod
+    def flip_turn_outputs(arr: np.ndarray) -> np.ndarray:
+        flipped_arr = np.zeros(315)
+        for i in range(315):
+            ii = GameState.flip_turn_outputs_index(i)
+            flipped_arr[ii] = arr[i]
+        return flipped_arr
+
 
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.

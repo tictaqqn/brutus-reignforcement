@@ -208,6 +208,8 @@ class MCTSPlayer:
         x = gs.to_inputs(flip=self.gs.turn == 1)
 
         logits, value = self.model.model.predict(x)
+        if self.gs.turn == -1:
+            logits[0] = GameState.flip_turn_outputs(logits[0])
         # logits = np.zeros(315)
         # value = 0.3
 
@@ -322,9 +324,9 @@ class MCTSPlayer:
         best_wp = child_win[selected_index] / child_move_count[selected_index]
 
         # 閾値未満の場合投了
-        if best_wp < RESIGN_THRESHOLD:
-            print('bestmove resign')
-            return
+        # if best_wp < RESIGN_THRESHOLD:
+        #     print('bestmove resign')
+        #     return
 
         bestmove = child_move[selected_index]
 
@@ -343,13 +345,18 @@ class MCTSPlayer:
 
         print('bestmove', bestmove)
 
-        arr = child_move_count_as_output_array_shape(child_move, child_move_count)
+        arr = child_move_count_as_output_array_shape(
+            child_move, child_move_count,
+            self.my_side == Winner.plus)
 
         return bestmove, best_wp, arr
 
-def child_move_count_as_output_array_shape(child_move, child_move_count):
+
+def child_move_count_as_output_array_shape(child_move, child_move_count, plus_turn):
     arr = np.zeros(315, dtype=int)
     for i, c in zip(child_move, child_move_count):
+        if not plus_turn:
+            i = GameState.flip_turn_outputs_index(i)
         arr[i] = c
     return arr
 
