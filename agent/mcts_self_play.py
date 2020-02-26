@@ -61,11 +61,13 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
     #         action=action_logs, wp=wp_logs, arr=arr_logs, board=board_logs
     #     ), f)
     # np.savezだとメモリ確保に時間がかかるかもしれない
-    np.savez(f'results/bababax/kifu/{d}.npz', wp=wp_logs, pi_mcts=arr_logs, board=board_logs, plus_turn=plus_turn_logs)
+    path = f'results/bababax/kifu/{d}.npz'
+    np.savez(path, wp=wp_logs, pi_mcts=arr_logs, board=board_logs, plus_turn=plus_turn_logs)
     # print(action_logs)
     print(wp_logs)
     print(arr_logs[0])
     print(board_logs)
+    return path
     
 
             

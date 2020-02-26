@@ -1,9 +1,12 @@
 from typing import List
-import numpy as np
 import pickle
+import datetime
+import json
+import numpy as np
 
 from .config import Config
 from .model_zero import ModelZero
+
 
 def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None):
 
@@ -36,11 +39,21 @@ def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None):
         plus_turns = kifu['plus_turn']
         mainNN.replay(wps, pi_mcts, board_logs, plus_turns, len(wps), 1.0)
 
+    return save_model(mainNN, config)
+
+
+def save_model(mainNN, config: Config) -> None:
+    d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    model_config_path = f"results/bababax/models/{d}-mainNN.json"
+    weight_path = f"results/bababax/models/{d}-mainNN.h5"
+    config_path = f"results/bababax/models/{d}-config.json"
+    mainNN.save(model_config_path,
+                weight_path)
+    with open(config_path, 'x') as f:
+        json.dump(config._to_dict(), f, indent=4)
+    return (model_config_path, weight_path, config_path)
+
+
 
 if __name__ == "__main__":
-    mcts_learn(['results/bababax/kifu/2020-02-26-11-42-06.npz'])        
-            
-
-    
-
-    
+    model_config, weight, _ = mcts_learn(['results/bababax/kifu/2020-02-26-11-42-06.npz'])
