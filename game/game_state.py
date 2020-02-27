@@ -26,6 +26,7 @@ except ImportError:
             else:
                 return l - r - 1
 
+
 class Drc(IntEnum):
     B_fr = 0
     B_r = 1
@@ -103,6 +104,14 @@ class GameState:
         self.board = board
         return act_id
 
+    def get_action_logs(self) -> np.ndarray:
+        action_logs = list(map(lambda x: x[0], self.logs))
+        return np.array(action_logs, dtype=int)
+
+    def get_board_logs(self) -> np.ndarray:
+        board_logs = list(map(lambda x: self.board_id(x[1]), self.logs))
+        return np.array(board_logs, dtype=int)
+
     @staticmethod
     def boundary_check(ij: Union[Sequence[int], np.ndarray]) -> bool:
         return 0 <= ij[0] <= 6 and 0 <= ij[1] <= 4
@@ -148,7 +157,7 @@ class GameState:
 
     def turn_change(self) -> Winner:
         self.n_turns += 1
-        self.turn *= -1 # 勝利判定時にもターン変更するようにした
+        self.turn *= -1  # 勝利判定時にもターン変更するようにした
         return self.get_winner()
 
     def get_winner(self) -> Winner:
@@ -289,6 +298,25 @@ class GameState:
     @staticmethod
     def to_outputs_index(i: int, j: int, drc: Drc) -> int:
         return i * 45 + j * 9 + drc
+    
+    @staticmethod
+    def flip_turn_outputs_index(index: int) -> int:
+        i, j, drc = np.unravel_index(index, (7, 5, 9))
+        i = 6 - i
+        if drc != Drc.f2:
+            d = DIRECTIONS_LIST[drc]
+            d[0] = - d[0]
+            drc = DIRECTIONS_LIST.index(d)
+        return GameState.to_outputs_index(i, j, drc)
+
+    @staticmethod
+    def flip_turn_outputs(arr: np.ndarray) -> np.ndarray:
+        flipped_arr = np.zeros(315)
+        for i in range(315):
+            ii = GameState.flip_turn_outputs_index(i)
+            flipped_arr[ii] = arr[i]
+        return flipped_arr
+
 
     def outputs_to_move_max(self, outputs: 'array_like') -> Tuple[Winner, int]:
         """出力から最も高い確率のものに有効手を指す.
@@ -328,7 +356,7 @@ class GameState:
 
         return self.random_play(0)
 
-    def board_hash(self, array: list =None) -> int:
+    def board_hash(self, array: list = None) -> int:
         """ハッシュ関数。ZobristのようにXORを用いている"""
         if array is None:
             array = DEFAULT_RANDOM_ARRAY
@@ -338,7 +366,7 @@ class GameState:
         while bit != -1 and bit is not None:
             zobrist_hash ^= array[(2269 + bit) % 2286]
             bit = bit_scan(i, bit + 1)
-        
+
         i = self.n_turns
         while bit != -1 and bit is not None:
             zobrist_hash ^= array[bit % 2286]

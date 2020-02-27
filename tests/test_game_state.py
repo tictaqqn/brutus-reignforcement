@@ -1,4 +1,4 @@
-import unittest
+import unittest, random
 import numpy as np
 from game.game_state import GameState, Drc, Winner
 
@@ -120,7 +120,6 @@ class TestGameState(unittest.TestCase):
                                      [0, 1, 0, 1, 0],
                                      [1, 1, 2, 1, 1]
                                  ]).tolist())
-        
 
     def test_board_id(self):
         board = np.array([
@@ -147,4 +146,13 @@ class TestGameState(unittest.TestCase):
                 state = self.gs.move_with_id(move)
                 if state != Winner.not_ended:
                     self.gs = GameState()
-            
+
+    def test_get_action_logs(self):
+        actions = []
+        random.seed(1)
+        for _ in range(5):
+            _, ac = self.gs.random_play(0)
+            actions.append(ac)
+        action_logs = self.gs.get_action_logs()
+        self.assertListEqual(action_logs.tolist(),
+                             actions)
