@@ -220,7 +220,7 @@ class Frame(wx.Frame):
             1: wx.Brush("black"),
             2: wx.Brush("black"),
         }
-
+        
         for i in range(7):
             for j in range(5):
                 c = self.gs.board[i, j]
@@ -228,11 +228,31 @@ class Frame(wx.Frame):
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
                     # TODO: デザイン改善の余地
-                    if self.piece_selected and \
-                            j == self.selected_x and i == self.selected_y:
-                        dc.SetBrush(wx.Brush("grey"))
-                        dc.DrawRectangle(j * px + px/4,
-                                         i * py + py/4, px/2, py/2)
+
+        if self.piece_selected:
+            j = self.selected_x
+            i = self.selected_y
+            c = self.gs.board[i][j]
+            dc.SetBrush(wx.Brush("grey"))
+            dc.DrawRectangle(j * px + px/4,
+                            i * py + py/4, px/2, py/2)
+
+            #隣あう８方向のうち合法手に印
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+                    if dx == 0 and dy == 0:
+                        continue
+                    if 0 <= i + dx < 7 and 0 <= j + dy < 5 and \
+                            self.gs.board[i+dx, j+dy] == 0:
+                        dc.DrawRectangle((j + dy) * px + px/4,
+                                (i + dx) * py + py/4, px/2, py/2)
+
+            #先手初手以外かつ前に自駒がなければ前に２マス進める
+            if self.gs.n_turns != 0 and 0 <= i-2*c < 7 and \
+                    self.gs.board[i-c, j] != c and self.gs.board[i-2*c, j] == 0:
+                dc.DrawRectangle(j * px + px/4,
+                        (i - c*2) * py + py/4, px/2, py/2)  
+
         self.update_status_bar()
 
     def handle_quit(self, event: CommandEvent) -> None:
