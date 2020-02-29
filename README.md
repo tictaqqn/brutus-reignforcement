@@ -21,11 +21,30 @@ python -m game.play
 python -m unittest
 ```
 
-## 学習の開始
+## Start learning (QLearning)
 
 ```bash:
 python -m agent.model
 ```
+
+## Generate histories of games(AlphaZero)
+
+```bash:
+python -m agent.mcts_self_play
+```
+
+## Learn from histories (AlphaZero)
+
+```bash:
+python -m agent.mcts_learn
+```
+
+## Repeatedly generate histories and learn (AlphaZero)
+
+```bash:
+python -m worker.self_play_and_learn
+```
+
 
 ## 強化学習について(案)
 
