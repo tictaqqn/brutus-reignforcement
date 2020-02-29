@@ -37,6 +37,7 @@ class GameMode(IntEnum):
     white_human_vs_random = 3
     black_human_vs_QL = 4
     black_human_vs_Zero = 6
+    white_human_vs_Zero = 7
 
     quit = 9
 
@@ -71,6 +72,8 @@ class Frame(wx.Frame):
                     u"New Game (Black) vs QL")
         menu.Append(GameMode.black_human_vs_Zero,
                     u"New Game (Black) vs Zero")
+        menu.Append(GameMode.white_human_vs_Zero,
+                    u"New Game (White) vs Zero")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
@@ -90,6 +93,8 @@ class Frame(wx.Frame):
                   id=GameMode.black_human_vs_QL)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.black_human_vs_Zero)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.white_human_vs_Zero)
         self.Bind(wx.EVT_MENU, self.handle_quit,
                   id=GameMode.quit)
 
@@ -122,6 +127,12 @@ class Frame(wx.Frame):
             self.player.load_model(MODEL_CONFIG_PATH_ZERO,
                             WEIGHT_PATH_ZERO)
             self.panel.Refresh()
+        elif self.game_mode == GameMode.white_human_vs_Zero:
+            self.player = MCTSPlayer(-1)
+            self.player.load_model(MODEL_CONFIG_PATH_ZERO,
+                            WEIGHT_PATH_ZERO)
+            self.panel.Refresh()
+            self.OnTimer(0)
 
     def try_move(self, event):
         if self.finished or self.CPU_thinking:
@@ -183,7 +194,10 @@ class Frame(wx.Frame):
         elif self.game_mode == GameMode.black_human_vs_QL:
             retTargetQs = self.model.model.predict(self.gs.to_inputs())[0]
             state, _ = self.gs.outputs_to_move_max(retTargetQs)
-        elif self.game_mode == GameMode.black_human_vs_Zero:
+        elif self.game_mode in [
+            GameMode.black_human_vs_Zero,
+            GameMode.white_human_vs_Zero
+        ]:
             self.player.gs.board = self.gs.board.copy()
             self.player.gs.turn = self.gs.turn
             self.player.gs.n_turns = self.gs.n_turns
