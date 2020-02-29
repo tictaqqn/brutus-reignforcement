@@ -1,6 +1,7 @@
 from typing import *
 from collections import deque
 from enum import IntEnum, auto, Enum
+import copy
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
@@ -306,7 +307,7 @@ class GameState:
         i, j, drc = np.unravel_index(index, (7, 5, 9))
         i = 6 - i
         if drc != Drc.f2:
-            d = DIRECTIONS_LIST[drc]
+            d = copy.deepcopy(DIRECTIONS_LIST[drc])
             d[0] = - d[0]
             drc = DIRECTIONS_LIST.index(d)
         return GameState.to_outputs_index(i, j, drc)
