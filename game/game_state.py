@@ -91,7 +91,9 @@ class GameState:
         return arr
 
     def __repr__(self) -> str:
-        return str(self.board)
+        return f"{self.board}\n\
+            turn: {'plus' if self.turn == 1 else 'minus'}\n\
+            n_turns: {self.n_turns}"
 
     def pop(self) -> Optional[int]:
         """一手前へ戻す. 戻した手も返す"""
