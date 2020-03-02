@@ -266,6 +266,13 @@ class Frame(wx.Frame):
                     dc.DrawEllipse(j * px, i * py, px, py)
                     # TODO: デザイン改善の余地
 
+        king_black_image = wx.Image('game/pictures/king_black.png').Scale(px*0.8, py*0.8)
+        king_white_image = wx.Image('game/pictures/king_white.png').Scale(px*0.8, py*0.8)
+        king_black_bitmap = king_black_image.ConvertToBitmap()
+        king_white_bitmap = king_white_image.ConvertToBitmap()
+        dc.DrawBitmap(king_black_bitmap, 2.1*px, 6.1*py, True)
+        dc.DrawBitmap(king_white_bitmap, 2.1*px, 0.1*py, True)
+        
         if self.piece_selected:
             j = self.selected_x
             i = self.selected_y
