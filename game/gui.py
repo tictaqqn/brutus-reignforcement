@@ -8,11 +8,14 @@ from .errors import ChoiceOfMovementError, GameError
 from .game_state import GameState, Winner
 from agent.model import QNetwork
 from agent.config import Config
+from uct.mcts import MCTSPlayer
 
 logger = getLogger(__name__)
 
 MODEL_CONFIG_PATH = "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.json"
 WEIGHT_PATH = "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.h5"
 
 
 def start() -> None:
@@ -32,7 +35,11 @@ class GameMode(IntEnum):
     humans_play = 1
     black_human_vs_random = 2
     white_human_vs_random = 3
-    black_human_vs_ML = 4
+    black_human_vs_QL = 4
+    black_human_vs_Zero = 6
+    white_human_vs_Zero = 7
+
+    quit = 9
 
 
 class Frame(wx.Frame):
@@ -61,13 +68,17 @@ class Frame(wx.Frame):
                     u"New Game (Black) vs random")
         menu.Append(GameMode.white_human_vs_random,
                     u"New Game (White) vs random")
-        menu.Append(GameMode.black_human_vs_ML,
-                    u"New Game (Black) vs ML")
+        menu.Append(GameMode.black_human_vs_QL,
+                    u"New Game (Black) vs QL")
+        menu.Append(GameMode.black_human_vs_Zero,
+                    u"New Game (Black) vs Zero")
+        menu.Append(GameMode.white_human_vs_Zero,
+                    u"New Game (White) vs Zero")
         menu.AppendSeparator()
         # menu.Append(5, u"Flip Vertical")
         # menu.Append(6, u"Show/Hide Player evaluation")
         # menu.AppendSeparator()
-        menu.Append(9, u"quit")
+        menu.Append(GameMode.quit, u"quit")
         menu_bar = wx.MenuBar()
         menu_bar.Append(menu, u"menu")
         self.SetMenuBar(menu_bar)
@@ -79,8 +90,13 @@ class Frame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.handle_new_game,
                   id=GameMode.white_human_vs_random)
         self.Bind(wx.EVT_MENU, self.handle_new_game,
-                  id=GameMode.black_human_vs_ML)
-        self.Bind(wx.EVT_MENU, self.handle_quit, id=9)
+                  id=GameMode.black_human_vs_QL)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.black_human_vs_Zero)
+        self.Bind(wx.EVT_MENU, self.handle_new_game,
+                  id=GameMode.white_human_vs_Zero)
+        self.Bind(wx.EVT_MENU, self.handle_quit,
+                  id=GameMode.quit)
 
         # status bar
         self.CreateStatusBar()
@@ -99,13 +115,24 @@ class Frame(wx.Frame):
         elif self.game_mode == GameMode.white_human_vs_random:
             self.gs.random_play()
             self.panel.Refresh()
-        elif self.game_mode == GameMode.black_human_vs_ML:
+        elif self.game_mode == GameMode.black_human_vs_QL:
             self.model = QNetwork(config=Config())
             success_load = self.model.load(MODEL_CONFIG_PATH, WEIGHT_PATH)
             if not success_load:
                 raise FileNotFoundError(
                     f"{MODEL_CONFIG_PATH} {WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
+        elif self.game_mode == GameMode.black_human_vs_Zero:
+            self.player = MCTSPlayer(1)
+            self.player.load_model(MODEL_CONFIG_PATH_ZERO,
+                            WEIGHT_PATH_ZERO)
+            self.panel.Refresh()
+        elif self.game_mode == GameMode.white_human_vs_Zero:
+            self.player = MCTSPlayer(-1)
+            self.player.load_model(MODEL_CONFIG_PATH_ZERO,
+                            WEIGHT_PATH_ZERO)
+            self.panel.Refresh()
+            self.OnTimer(0)
 
     def try_move(self, event):
         if self.finished or self.CPU_thinking:
@@ -152,20 +179,30 @@ class Frame(wx.Frame):
         self.panel.Refresh()
         if self.finished:
             return
-        if self.game_mode == GameMode.black_human_vs_random or \
-                self.game_mode == GameMode.white_human_vs_random or \
-                self.game_mode == GameMode.black_human_vs_ML:
+        if self.game_mode != GameMode.humans_play:
             self.timer.Start(500)  # 500ms後OnTimer()が反応
             self.CPU_thinking = True
             # self.gs.random_play()
             # self.panel.Refresh()
 
     def OnTimer(self, event) -> None:
-        if self.game_mode != GameMode.black_human_vs_ML:
+        if self.game_mode in [
+            GameMode.black_human_vs_random,
+            GameMode.white_human_vs_random
+        ]:
             state, _ = self.gs.random_play()
-        else:
+        elif self.game_mode == GameMode.black_human_vs_QL:
             retTargetQs = self.model.model.predict(self.gs.to_inputs())[0]
             state, _ = self.gs.outputs_to_move_max(retTargetQs)
+        elif self.game_mode in [
+            GameMode.black_human_vs_Zero,
+            GameMode.white_human_vs_Zero
+        ]:
+            self.player.gs.board = self.gs.board.copy()
+            self.player.gs.turn = self.gs.turn
+            self.player.gs.n_turns = self.gs.n_turns
+            best_action, best_wp, arr = self.player.go()
+            state = self.gs.move_with_id(best_action)
         self.check_game_end(state)
         self.panel.Refresh()
         self.timer.Stop()
@@ -220,7 +257,7 @@ class Frame(wx.Frame):
             1: wx.Brush("black"),
             2: wx.Brush("black"),
         }
-        
+
         for i in range(7):
             for j in range(5):
                 c = self.gs.board[i, j]
@@ -242,9 +279,9 @@ class Frame(wx.Frame):
             c = self.gs.board[i, j]
             dc.SetBrush(wx.Brush("grey"))
             dc.DrawRectangle(j * px + px/4,
-                            i * py + py/4, px/2, py/2)
+                             i * py + py/4, px/2, py/2)
 
-            #隣あう８方向のうち合法手に印
+            # 隣あう８方向のうち合法手に印
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx == 0 and dy == 0:
@@ -252,13 +289,13 @@ class Frame(wx.Frame):
                     if 0 <= i + dx < 7 and 0 <= j + dy < 5 and \
                             self.gs.board[i+dx, j+dy] == 0:
                         dc.DrawRectangle((j + dy) * px + px/4,
-                                (i + dx) * py + py/4, px/2, py/2)
+                                         (i + dx) * py + py/4, px/2, py/2)
 
-            #先手初手以外かつ前に自駒がなければ前に２マス進める
+            # 先手初手以外かつ前に自駒がなければ前に２マス進める
             if self.gs.n_turns != 0 and 0 <= i-2*c < 7 and \
                     self.gs.board[i-c, j] != c and self.gs.board[i-2*c, j] == 0:
                 dc.DrawRectangle(j * px + px/4,
-                        (i - c*2) * py + py/4, px/2, py/2)  
+                                 (i - c*2) * py + py/4, px/2, py/2)
 
         self.update_status_bar()
 

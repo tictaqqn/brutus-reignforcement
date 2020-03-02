@@ -27,10 +27,11 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
 
     for n in range(n_games):
         gs = GameState()
-        player_plus.gs = gs
-        player_minus.gs = gs
 
         for _ in range(n_actions):
+            player_plus.gs.board = gs.board.copy()
+            player_plus.gs.turn = gs.turn
+            player_plus.gs.n_turns = gs.n_turns
             best_action, best_wp, arr = player_plus.go()
             # action_logs.append(best_action)
             wp_logs.append(best_wp)
@@ -42,6 +43,9 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             state = gs.move_with_id(best_action)
             if state != Winner.not_ended:
                 break
+            player_minus.gs.board = gs.board.copy()
+            player_minus.gs.turn = gs.turn
+            player_minus.gs.n_turns = gs.n_turns
             best_action, best_wp, arr = player_minus.go()
             # action_logs.append(best_action)
             wp_logs.append(best_wp)

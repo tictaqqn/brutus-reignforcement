@@ -1,6 +1,7 @@
 from typing import *
 from collections import deque
 from enum import IntEnum, auto, Enum
+import copy
 import random
 import numpy as np
 from .errors import ChoiceOfMovementError, GameError
@@ -91,7 +92,9 @@ class GameState:
         return arr
 
     def __repr__(self) -> str:
-        return str(self.board)
+        return f"{self.board}\n\
+            turn: {'plus' if self.turn == 1 else 'minus'}\n\
+            n_turns: {self.n_turns}"
 
     def pop(self) -> Optional[int]:
         """一手前へ戻す. 戻した手も返す"""
@@ -304,7 +307,7 @@ class GameState:
         i, j, drc = np.unravel_index(index, (7, 5, 9))
         i = 6 - i
         if drc != Drc.f2:
-            d = DIRECTIONS_LIST[drc]
+            d = copy.deepcopy(DIRECTIONS_LIST[drc])
             d[0] = - d[0]
             drc = DIRECTIONS_LIST.index(d)
         return GameState.to_outputs_index(i, j, drc)
