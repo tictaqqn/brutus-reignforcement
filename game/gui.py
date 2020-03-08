@@ -123,12 +123,12 @@ class Frame(wx.Frame):
                     f"{MODEL_CONFIG_PATH} {WEIGHT_PATH}が読み込めませんでした")
             self.panel.Refresh()
         elif self.game_mode == GameMode.black_human_vs_Zero:
-            self.player = MCTSPlayer(1)
+            self.player = MCTSPlayer(-1)
             self.player.load_model(MODEL_CONFIG_PATH_ZERO,
                             WEIGHT_PATH_ZERO)
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_Zero:
-            self.player = MCTSPlayer(-1)
+            self.player = MCTSPlayer(1)
             self.player.load_model(MODEL_CONFIG_PATH_ZERO,
                             WEIGHT_PATH_ZERO)
             self.panel.Refresh()

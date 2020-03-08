@@ -186,7 +186,7 @@ class MCTSPlayer:
             child_node = self.uct_nodes[index]
 
             # valueを勝敗として返す
-            result = 1 - child_node.value_win
+            result = child_node.value_win
         else:
             # 手番を入れ替えて1手深く読む
             result = self.uct_search(gs, child_index[next_index])
@@ -201,7 +201,7 @@ class MCTSPlayer:
         # print('pop')
         gs.pop()
 
-        return 1 - result
+        return result
 
     def eval_node(self, gs: GameState, index):
         """ノードを評価"""
@@ -346,17 +346,16 @@ class MCTSPlayer:
         print('bestmove', bestmove)
 
         arr = child_move_count_as_output_array_shape(
-            child_move, child_move_count,
-            self.my_side == Winner.plus)
+            child_move, child_move_count)
 
         return bestmove, best_wp, arr
 
 
-def child_move_count_as_output_array_shape(child_move, child_move_count, plus_turn):
+def child_move_count_as_output_array_shape(child_move, child_move_count):
     arr = np.zeros(315, dtype=int)
     for i, c in zip(child_move, child_move_count):
-        if not plus_turn:
-            i = GameState.flip_turn_outputs_index(i)
+        # if not plus_turn:
+        #     i = GameState.flip_turn_outputs_index(i)
         arr[i] = c
     return arr
 
