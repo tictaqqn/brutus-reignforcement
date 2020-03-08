@@ -331,17 +331,17 @@ class MCTSPlayer:
         bestmove = child_move[selected_index]
 
         # 勝率を評価値に変換
-        if best_wp == 1.0:
-            cp = 30000
-        else:
-            cp = int(-math.log(1.0 / best_wp - 1.0) * 600)
+        # if best_wp >= 1.0 - 1e-7:
+        #     cp = 30000
+        # else:
+        #     cp = int(-math.log(1.0 / best_wp - 1.0) * 600)
 
-        print('info nps {} time {} nodes {} hashfull {} score cp {} pv {}'.format(
+        print('info nps {} time {} nodes {} hashfull {} score wp {} pv {}'.format(
             int(current_node.move_count / finish_time),
             int(finish_time * 1000),
             current_node.move_count,
             int(self.node_hash.get_usage_rate() * 1000),
-            cp, bestmove))
+            best_wp, bestmove))
 
         print('bestmove', bestmove)
 
