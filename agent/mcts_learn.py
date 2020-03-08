@@ -42,7 +42,7 @@ def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None):
     return save_model(mainNN, config)
 
 
-def save_model(mainNN, config: Config) -> None:
+def save_model(mainNN, config: Config):
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     model_config_path = f"results/bababax/models/{d}-mainNN.json"
     weight_path = f"results/bababax/models/{d}-mainNN.h5"
