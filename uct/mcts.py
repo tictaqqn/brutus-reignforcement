@@ -205,7 +205,7 @@ class MCTSPlayer:
 
     def eval_node(self, gs: GameState, index):
         """ノードを評価"""
-        x = gs.to_inputs(flip=self.gs.turn == 1)
+        x = gs.to_inputs(flip=self.gs.turn == -1)
 
         logits, value = self.model.model.predict(x)
         if self.gs.turn == -1:
