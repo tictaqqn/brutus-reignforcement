@@ -11,12 +11,8 @@ from agent.config import Config
 
 # UCBのボーナス項の定数
 C_PUCT = 1.0
-# 1手当たりのプレイアウト数
-CONST_PLAYOUT = 300
 # 投了する勝率の閾値
 RESIGN_THRESHOLD = 0.01
-# 温度パラメータ
-TEMPERATURE = 1.0
 
 
 def softmax_temperature_with_normalize(logits, temperature: float):
@@ -41,7 +37,7 @@ class PlayoutInfo:
 
 
 class MCTSPlayer:
-    def __init__(self, my_side: int):
+    def __init__(self, my_side: int, temperature=100.0, n_playout=300):
         self.model = None  # モデル
 
         # ノードの情報
@@ -52,10 +48,10 @@ class MCTSPlayer:
 
         # プレイアウト回数管理
         self.po_info = PlayoutInfo()
-        self.playout = CONST_PLAYOUT
+        self.playout = n_playout
 
         # 温度パラメータ
-        self.temperature = TEMPERATURE
+        self.temperature = temperature
         self.gs = GameState()
 
         if my_side == 1:
@@ -157,7 +153,6 @@ class MCTSPlayer:
         current_node = self.uct_nodes[current]
 
         # 詰みのチェック
-        # TODO: 勝利かどうかで変える
         winner = gs.get_winner()
         if winner == self.my_side:
             return 1.0  # 反転して値を返すため1を返す
