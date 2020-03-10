@@ -14,21 +14,21 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
     arr_logs = []
     board_logs = []
     plus_turn_logs = []
+    player_plus = MCTSPlayer(1)
+    player_minus = MCTSPlayer(-1)
+    if model_config_path_plus is None or weight_path_plus is None:
+        player_plus.initialize_model()
+    else:
+        player_plus.load_model(model_config_path_plus,
+                                weight_path_plus)
+    if model_config_path_minus is None or weight_path_minus is None:
+        player_minus.initialize_model()
+    else:
+        player_minus.load_model(model_config_path_minus,
+                                weight_path_minus)
 
     for n in range(n_games):
         gs = GameState()
-        player_plus = MCTSPlayer(1)
-        player_minus = MCTSPlayer(-1)
-        if model_config_path_plus is None or weight_path_plus is None:
-            player_plus.initialize_model()
-        else:
-            player_plus.load_model(model_config_path_plus,
-                                   weight_path_plus)
-        if model_config_path_minus is None or weight_path_minus is None:
-            player_minus.initialize_model()
-        else:
-            player_minus.load_model(model_config_path_minus,
-                                    weight_path_minus)
 
         for _ in range(n_actions):
             player_plus.gs.board = gs.board.copy()
