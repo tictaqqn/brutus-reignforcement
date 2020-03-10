@@ -19,8 +19,9 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
         gs = GameState()
         player_plus = MCTSPlayer(1)
         player_minus = MCTSPlayer(-1)
-        if model_config_path is None or weight_path is None:
+        if model_config_path_plus is None or weight_path_plus is None:
             player_plus.initialize_model()
+        if model_config_path_minus is None or weight_path_minus is None:
             player_minus.initialize_model()
         else:
             player_plus.load_model(model_config_path_plus,
