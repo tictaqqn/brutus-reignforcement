@@ -7,7 +7,7 @@ from game.game_state import GameState, Winner
 from uct.mcts import MCTSPlayer
 
 
-def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=None):
+def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, model_config_path_minus=None, weight_path_minus=None):
 
     # action_logs = []
     wp_logs = []
@@ -23,10 +23,10 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
             player_plus.initialize_model()
             player_minus.initialize_model()
         else:
-            player_plus.load_model(model_config_path,
-                                weight_path)
-            player_minus.load_model(model_config_path,
-                                    weight_path)
+            player_plus.load_model(model_config_path_plus,
+                                   weight_path_plus)
+            player_minus.load_model(model_config_path_minus,
+                                    weight_path_minus)
 
         for _ in range(n_actions):
             player_plus.gs.board = gs.board.copy()
@@ -66,16 +66,14 @@ def mcts_self_play(n_games, n_actions=50, model_config_path=None, weight_path=No
     #     ), f)
     # np.savezだとメモリ確保に時間がかかるかもしれない
     path = f'results/bababax/kifu/{d}.npz'
-    np.savez(path, wp=wp_logs, pi_mcts=arr_logs, board=board_logs, plus_turn=plus_turn_logs)
+    np.savez(path, wp=wp_logs, pi_mcts=arr_logs,
+             board=board_logs, plus_turn=plus_turn_logs)
     # print(action_logs)
     print(wp_logs)
     print(arr_logs[0])
     print(board_logs)
     return path
-    
 
-            
+
 if __name__ == "__main__":
     mcts_self_play(2, 10)
-
-

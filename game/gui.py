@@ -18,8 +18,8 @@ MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.json
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.h5"
 MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.json"
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.h5"
-# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-12-05-09-mainNN.json"
-# WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-12-05-09-mainNN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.h5"
 
 
 def start() -> None:
