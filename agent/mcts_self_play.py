@@ -68,19 +68,19 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
 
         if state == Winner.plus:
             print('winner: plus')
-            winner_or_not += [1., 0.] * (n_turns>>1) + [1.] * (n_turns&1)
+            winner_or_not += [1., -1.] * (n_turns>>1) + [1.] * (n_turns&1)
         elif state == Winner.minus:
             print('winner: minus')
-            winner_or_not += [0., 1.] * (n_turns>>1) + [0.] * (n_turns&1)
+            winner_or_not += [-1., 1.] * (n_turns>>1) + [1.] * (n_turns&1)
         else:
             print('draw')
-            winner_or_not += [0.5] * n_turns
+            winner_or_not += [0.] * n_turns
 
         arr_logs += _arr_logs
         board_logs += _board_logs
         plus_turn_logs += _plus_turn_logs
-        print(len(winner_or_not), len(arr_logs))
-        assert len(winner_or_not) == len(arr_logs)
+        # print(len(winner_or_not), len(arr_logs))
+        # assert len(winner_or_not) == len(arr_logs)
 
     print('saving')
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')

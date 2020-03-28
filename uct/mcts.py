@@ -203,11 +203,10 @@ class MCTSPlayer:
         x = gs.to_inputs(flip=gs.turn == -1)
 
         logits, value = self.model.model.predict(x)
-        value = np.clip(float(value), 0, 1)
         if gs.turn == -1:
             logits[0] = GameState.flip_turn_outputs(logits[0])
         if gs.turn != self.player:
-            value = 1 - value
+            value *= -1
         # logits = np.zeros(315)
         # value = 0.3
 
@@ -228,7 +227,7 @@ class MCTSPlayer:
 
         # ノードの値を更新
         current_node.nnrate = probabilities
-        current_node.value_win = value
+        current_node.value_win = value / 2 + 0.5
         current_node.evaled = True
 
     def usi(self):
