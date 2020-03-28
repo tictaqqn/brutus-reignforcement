@@ -8,10 +8,11 @@ from .config import Config
 from .model_zero import ModelZero
 
 
-def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None, beta=1.0):
+def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_path=None, beta=1.0):
 
-    config = Config()
-    config.learn_func = 'mcts_learn'
+    if config is None:
+        config = Config()
+        config.learn_func = 'mcts_learn'
     qc = config.Qlearn
 
     total_reward_vec = np.zeros(qc.num_consecutive_iterations)  # 各試行の報酬を格納

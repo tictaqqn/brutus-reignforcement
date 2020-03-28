@@ -21,10 +21,14 @@ weight = None
 # ]
 
 if __name__ == "__main__":
+    config = Config(1000.)
+    mc = config.mcts
+    config.learn_func = 'self_play_and_learn'
+
     for _ in range(1):
         paths = []
         for _ in range(10):
-            path = mcts_self_play(10, 50, model_config, weight, model_config, weight, )
+            path = mcts_self_play(10, 50, model_config, weight, None, None,
+                                  mc.temperature, mc.n_playout, mc.c_puct)
             paths.append(path)
-        model_config, weight, _ = mcts_learn(paths, model_config, weight)
-        
+        model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
