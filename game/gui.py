@@ -20,7 +20,8 @@ MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.json
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.h5"
 MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.json"
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.h5"
-
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-28-17-50-16-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-28-17-50-16-mainNN.h5"
 
 def start() -> None:
     app = wx.App()

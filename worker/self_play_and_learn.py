@@ -3,6 +3,8 @@ from agent.mcts_learn import mcts_learn
 
 model_config = None
 weight = None
+# model_config = "results/bababax/models/2020-03-28-17-50-16-mainNN.json"
+# weight = "results/bababax/models/2020-03-28-17-50-16-mainNN.h5"
 # model_config = "results/bababax/models/2020-02-26-12-17-48-mainNN.json"
 # weight = "results/bababax/models/2020-02-26-12-17-48-mainNN.h5"
 # model_config = "results/bababax/models/2020-03-09-02-13-23-mainNN.json"
@@ -22,7 +24,7 @@ if __name__ == "__main__":
     for _ in range(1):
         paths = []
         for _ in range(10):
-            path = mcts_self_play(10, 50, model_config, weight)
+            path = mcts_self_play(10, 50, model_config, weight, model_config, weight, )
             paths.append(path)
         model_config, weight, _ = mcts_learn(paths, model_config, weight)
         

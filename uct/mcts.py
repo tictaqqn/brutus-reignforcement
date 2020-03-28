@@ -53,6 +53,7 @@ class MCTSPlayer:
         self.c_puct = c_puct
         self.gs = GameState()
 
+        self.player = my_side
         if my_side == 1:
             self.my_side = Winner.plus
             self.other_side = Winner.minus
@@ -205,6 +206,8 @@ class MCTSPlayer:
         value = np.clip(float(value), 0, 1)
         if self.gs.turn == -1:
             logits[0] = GameState.flip_turn_outputs(logits[0])
+        if self.gs.turn != self.player:
+            value = 1 - value
         # logits = np.zeros(315)
         # value = 0.3
 

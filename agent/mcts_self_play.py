@@ -7,7 +7,7 @@ from game.game_state import GameState, Winner
 from uct.mcts import MCTSPlayer
 
 
-def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, model_config_path_minus=None, weight_path_minus=None):
+def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, model_config_path_minus=None, weight_path_minus=None, temperature=100.0, n_playout=300, c_puct=1.0):
 
     # action_logs = []
     # wp_logs = []
@@ -15,8 +15,8 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
     arr_logs = []
     board_logs = []
     plus_turn_logs = []
-    player_plus = MCTSPlayer(1)
-    player_minus = MCTSPlayer(-1)
+    player_plus = MCTSPlayer(1, temperature, n_playout, c_puct)
+    player_minus = MCTSPlayer(-1, temperature, n_playout, c_puct)
     if model_config_path_plus is None or weight_path_plus is None:
         player_plus.initialize_model()
     else:
