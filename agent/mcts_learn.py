@@ -8,7 +8,7 @@ from .config import Config
 from .model_zero import ModelZero
 
 
-def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None):
+def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None, beta=1.0):
 
     config = Config()
     config.learn_func = 'mcts_learn'
@@ -37,7 +37,7 @@ def mcts_learn(kifus: List[str], model_config_path=None, weight_path=None):
         pi_mcts = kifu['pi_mcts']
         board_logs = kifu['board']
         plus_turns = kifu['plus_turn']
-        mainNN.replay(wps, pi_mcts, board_logs, plus_turns, len(wps), 1.0)
+        mainNN.replay(wps, pi_mcts, board_logs, plus_turns, len(wps), beta)
 
     return save_model(mainNN, config)
 

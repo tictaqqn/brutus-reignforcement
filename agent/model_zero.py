@@ -113,12 +113,12 @@ class ModelZero:
             np.arange(len(wps)), size=batch_size, replace=False)
         mini_batch = [(wps[i], pi_mcts[i], board_logs[i], plus_turns[i]) for i in indices]
 
-        for i, (wp, pi, board, plus_turn) in enumerate(mini_batch):
+        for i, (winner, pi, board, plus_turn) in enumerate(mini_batch):
             gs = GameState()
             gs.board = board
             inputs[i] = gs.to_inputs(flip=not plus_turn) # shape=(4, 5, 5)
             policy_true[i] = pi ** beta
-            values_true[i] = wp
+            values_true[i] = winner if plus_turn else -winner
 
         # epochsは訓練データの反復回数、verbose=0は表示なしの設定
         self.model.fit(inputs, [policy_true, values_true], epochs=1, verbose=0)

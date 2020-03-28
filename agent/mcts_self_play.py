@@ -10,7 +10,8 @@ from uct.mcts import MCTSPlayer
 def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, model_config_path_minus=None, weight_path_minus=None):
 
     # action_logs = []
-    wp_logs = []
+    # wp_logs = []
+    winner_or_not = []
     arr_logs = []
     board_logs = []
     plus_turn_logs = []
@@ -29,6 +30,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
 
     for n in range(n_games):
         gs = GameState()
+        _arr_logs, _board_logs, _plus_turn_logs = [], [], []
 
         for _ in range(n_actions):
             player_plus.gs.board = gs.board.copy()
@@ -36,10 +38,10 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
             player_plus.gs.n_turns = gs.n_turns
             best_action, best_wp, arr = player_plus.go()
             # action_logs.append(best_action)
-            wp_logs.append(best_wp)
-            arr_logs.append(arr)
-            board_logs.append(gs.board.copy())
-            plus_turn_logs.append(True)
+            # wp_logs.append(best_wp)
+            _arr_logs.append(arr)
+            _board_logs.append(gs.board.copy())
+            _plus_turn_logs.append(True)
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
@@ -50,15 +52,35 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
             player_minus.gs.n_turns = gs.n_turns
             best_action, best_wp, arr = player_minus.go()
             # action_logs.append(best_action)
-            wp_logs.append(best_wp)
-            arr_logs.append(arr)
-            board_logs.append(gs.board.copy())
-            plus_turn_logs.append(False)
+            # wp_logs.append(best_wp)
+            _arr_logs.append(arr)
+            _board_logs.append(gs.board.copy())
+            _plus_turn_logs.append(False)
             # if best_action is None:
             #     break
             state = gs.move_with_id(best_action)
             if state != Winner.not_ended:
                 break
+
+        n_turns = gs.n_turns
+        print(len(_arr_logs), n_turns)
+        assert len(_arr_logs) == n_turns
+
+        if state == Winner.plus:
+            print('winner: plus')
+            winner_or_not += [1., 0.] * (n_turns>>1) + [1.] * (n_turns&1)
+        elif state == Winner.minus:
+            print('winner: minus')
+            winner_or_not += [0., 1.] * (n_turns>>1) + [0.] * (n_turns&1)
+        else:
+            print('draw')
+            winner_or_not += [0.5] * n_turns
+
+        arr_logs += _arr_logs
+        board_logs += _board_logs
+        plus_turn_logs += _plus_turn_logs
+        print(len(winner_or_not), len(arr_logs))
+        assert len(winner_or_not) == len(arr_logs)
 
     print('saving')
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -68,11 +90,11 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
     #     ), f)
     # np.savezだとメモリ確保に時間がかかるかもしれない
     path = f'results/bababax/kifu/{d}.npz'
-    np.savez(path, wp=wp_logs, pi_mcts=arr_logs,
+    np.savez(path, wp=winner_or_not, pi_mcts=arr_logs,
              board=board_logs, plus_turn=plus_turn_logs)
     # print(action_logs)
-    print(wp_logs)
-    print(arr_logs[0])
+    print(winner_or_not)
+    # print(arr_logs[0])
     print(board_logs)
     return path
 
