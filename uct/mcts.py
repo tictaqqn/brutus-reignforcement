@@ -9,8 +9,6 @@ from game.game_state import GameState, Winner
 from agent.model_zero import ModelZero
 from agent.config import Config
 
-# UCBのボーナス項の定数
-C_PUCT = 1.0
 # 投了する勝率の閾値
 RESIGN_THRESHOLD = 0.01
 
@@ -37,7 +35,7 @@ class PlayoutInfo:
 
 
 class MCTSPlayer:
-    def __init__(self, my_side: int, temperature=100.0, n_playout=300):
+    def __init__(self, my_side: int, temperature=100.0, n_playout=300, c_puct=1.0):
         self.model = None  # モデル
 
         # ノードの情報
@@ -52,6 +50,7 @@ class MCTSPlayer:
 
         # 温度パラメータ
         self.temperature = temperature
+        self.c_puct = c_puct
         self.gs = GameState()
 
         if my_side == 1:
@@ -84,7 +83,7 @@ class MCTSPlayer:
             np.float32(0.5), child_num), where=child_move_count != 0)
         u = np.sqrt(np.float32(current_node.move_count)) / \
             (1 + child_move_count)
-        ucb = q + C_PUCT * current_node.nnrate * u
+        ucb = q + self.c_puct * current_node.nnrate * u
 
         return np.argmax(ucb)
 
@@ -206,7 +205,6 @@ class MCTSPlayer:
         value = np.clip(float(value), 0, 1)
         if self.gs.turn == -1:
             logits[0] = GameState.flip_turn_outputs(logits[0])
-            value = 1 - value
         # logits = np.zeros(315)
         # value = 0.3
 
