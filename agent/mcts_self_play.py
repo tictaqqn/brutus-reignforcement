@@ -71,7 +71,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
             winner_or_not += [1., -1.] * (n_turns>>1) + [1.] * (n_turns&1)
         elif state == Winner.minus:
             print('winner: minus')
-            winner_or_not += [-1., 1.] * (n_turns>>1) + [1.] * (n_turns&1)
+            winner_or_not += [-1., 1.] * (n_turns>>1) + [-1.] * (n_turns&1)
         else:
             print('draw')
             winner_or_not += [0.] * n_turns
