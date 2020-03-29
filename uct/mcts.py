@@ -86,6 +86,7 @@ class MCTSPlayer:
             (1 + child_move_count)
         ucb = q + self.c_puct * current_node.nnrate * u
 
+        # return np.random.choice(np.where(ucb == np.max(ucb))[0])
         return np.argmax(ucb)
 
     def expand_node(self, gs: GameState):
@@ -305,8 +306,10 @@ class MCTSPlayer:
             selected_index = np.random.choice(
                 np.arange(child_num), p=child_move_count/np.sum(child_move_count))
         else:
-            # 訪問回数最大の手を選択する
-            selected_index = np.argmax(child_move_count)
+            # 訪問回数最大の手を選択するnp.random.choice(np.where(ucb == np.max(ucb))[0])
+            # selected_index = np.argmax(child_move_count)
+            selected_index = np.random.choice(
+                np.where(child_move_count == np.max(child_move_count))[0])
 
         child_win = current_node.child_win
 
