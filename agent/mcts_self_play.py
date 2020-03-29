@@ -63,6 +63,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
                 break
 
         n_turns = gs.n_turns
+        print(f'n_game: {n}/{n_games}')
         print(len(_arr_logs), n_turns)
         # assert len(_arr_logs) == n_turns
 

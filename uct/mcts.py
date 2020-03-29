@@ -343,16 +343,16 @@ class MCTSPlayer:
         print('bestmove', bestmove)
 
         arr = child_move_count_as_output_array_shape(
-            child_move, child_move_count)
+            child_move, child_move_count, self.player == 1)
 
         return bestmove, best_wp, arr
 
 
-def child_move_count_as_output_array_shape(child_move, child_move_count):
+def child_move_count_as_output_array_shape(child_move, child_move_count, plus_turn):
     arr = np.zeros(315, dtype=int)
     for i, c in zip(child_move, child_move_count):
-        # if not plus_turn:
-        #     i = GameState.flip_turn_outputs_index(i)
+        if not plus_turn:
+            i = GameState.flip_turn_outputs_index(i)
         arr[i] = c
     return arr
 
