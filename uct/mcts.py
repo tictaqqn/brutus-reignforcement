@@ -80,6 +80,9 @@ class MCTSPlayer:
         child_win = current_node.child_win
         child_move_count = current_node.child_move_count
 
+        if gs.turn != self.player:
+            child_win = 1 - child_win
+
         q = np.divide(child_win, child_move_count, out=np.repeat(
             np.float32(0.5), child_num), where=child_move_count != 0)
         u = np.sqrt(np.float32(current_node.move_count)) / \
