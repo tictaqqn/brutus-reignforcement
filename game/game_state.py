@@ -168,14 +168,20 @@ class GameState:
             if self.board[6, 1] == -1 or self.board[6, 3] == -1 or \
                     self.board[5, 2] == -1:
                 return Winner.minus  # 後手勝利
-            elif (self.board != -1).all():
-                return Winner.plus  # 先手勝利
+            else:
+                try:
+                    next(self.generate_legal_moves())
+                except StopIteration:
+                    return Winner.plus  # 先手勝利
         else:
             if self.board[0, 1] == 1 or self.board[0, 3] == 1 or \
                     self.board[1, 2] == 1:
                 return Winner.plus  # 先手勝利
-            elif (self.board != 1).all():
-                return Winner.minus  # 後手勝利
+            else: 
+                try:
+                    next(self.generate_legal_moves())
+                except StopIteration:
+                    return Winner.minus  # 先手勝利
         return Winner.not_ended
 
     def is_game_over(self) -> bool:
