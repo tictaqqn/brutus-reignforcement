@@ -64,7 +64,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
 
         n_turns = gs.n_turns
         print(len(_arr_logs), n_turns)
-        assert len(_arr_logs) == n_turns
+        # assert len(_arr_logs) == n_turns
 
         if state == Winner.plus:
             print('winner: plus')
@@ -79,7 +79,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
         arr_logs += _arr_logs
         board_logs += _board_logs
         plus_turn_logs += _plus_turn_logs
-        # print(len(winner_or_not), len(arr_logs))
+        print(len(winner_or_not), len(arr_logs))
         # assert len(winner_or_not) == len(arr_logs)
 
     print('saving')

@@ -118,7 +118,7 @@ class ModelZero:
             gs.board = board
             inputs[i] = gs.to_inputs(flip=not plus_turn) # shape=(4, 5, 5)
             policy_true[i] = pi ** beta
-            values_true[i] = winner if plus_turn else -winner
+            values_true[i] = winner
 
         # epochsは訓練データの反復回数、verbose=0は表示なしの設定
         self.model.fit(inputs, [policy_true, values_true], epochs=1, verbose=0)
