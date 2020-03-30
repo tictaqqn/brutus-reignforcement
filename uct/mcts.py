@@ -262,9 +262,11 @@ class MCTSPlayer:
     #     print('readyok')
 
     def go(self):
-        if self.gs.is_game_over():
+        state = self.gs.get_winner()
+        if state != Winner.not_ended:
             print('bestmove resign')
-            return
+            print(self.gs)
+            return None, state, None
 
         # 探索情報をクリア
         self.po_info.count = 0
@@ -287,7 +289,9 @@ class MCTSPlayer:
         child_move = current_node.child_move
         if child_num == 1:
             print('bestmove', child_move[0])
-            return
+            arr = np.zeros(315, dtype=int)
+            arr[child_move[0]] = 1
+            return child_move[0], None, arr
 
         # プレイアウトを繰り返す
         # 探索回数が閾値を超える, または探索が打ち切られたらループを抜ける
