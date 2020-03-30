@@ -100,9 +100,9 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
     np.savez(path, wp=winner_or_not, pi_mcts=arr_logs,
              board=board_logs, plus_turn=plus_turn_logs)
     # print(action_logs)
-    print(winner_or_not)
+    # print(winner_or_not)
     # print(arr_logs[0])
-    print(board_logs)
+    # print(board_logs)
     return path
 
 
