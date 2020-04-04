@@ -22,15 +22,15 @@ weight = "results/bababax/models/2020-03-30-01-50-11-mainNN.h5"
 # ]
 
 if __name__ == "__main__":
-    config = Config(temperature=10000., c_puct=1.4)
+    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True)
     mc = config.mcts
     config.learn_func = 'self_play_and_learn'
 
     for k in range(1000):
         config.n_period = k
         paths = []
-        for _ in range(10):
-            path = mcts_self_play(10, 30, model_config, weight, model_config, weight,
-                                  mc.temperature, mc.n_playout, mc.c_puct)
+        for _ in range(20):
+            path = mcts_self_play(20, 40, model_config, weight, model_config, weight,
+                                  mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw)
             paths.append(path)
         model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
