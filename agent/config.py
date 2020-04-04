@@ -4,10 +4,10 @@ from .configbase import ConfigBase
 
 class Config(ConfigBase):
 
-    def __init__(self, temperature=100.0, n_playout=300, c_puct=1.0):
+    def __init__(self, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False):
         self.model = ModelConfig()
         self.Qlearn = QLearnConfig()
-        self.mcts = MCTSConfig(temperature, n_playout, c_puct)
+        self.mcts = MCTSConfig(temperature, n_playout, c_puct, ignore_draw)
         self.pre_trained = None
         self.learn_func = None
 
@@ -53,7 +53,8 @@ class QLearnConfig(ConfigBase):
 
 class MCTSConfig(ConfigBase):
 
-    def __init__(self, temperature, n_playout, c_puct):
+    def __init__(self, temperature: float, n_playout: int, c_puct: float, ignore_draw: bool):
         self.temperature = temperature
         self.n_playout = n_playout
         self.c_puct = c_puct
+        self.ignore_draw = ignore_draw

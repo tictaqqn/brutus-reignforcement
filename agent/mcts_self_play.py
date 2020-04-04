@@ -7,7 +7,8 @@ from game.game_state import GameState, Winner
 from uct.mcts import MCTSPlayer
 
 
-def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, model_config_path_minus=None, weight_path_minus=None, temperature=100.0, n_playout=300, c_puct=1.0):
+def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, 
+    model_config_path_minus=None, weight_path_minus=None, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False):
 
     # action_logs = []
     # wp_logs = []
@@ -21,7 +22,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
         player_plus.initialize_model()
     else:
         player_plus.load_model(model_config_path_plus,
-                                weight_path_plus)
+                               weight_path_plus)
     if model_config_path_minus is None or weight_path_minus is None:
         player_minus.initialize_model()
     else:
@@ -75,12 +76,14 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
 
         if state == Winner.plus:
             print('winner: plus')
-            winner_or_not += [1., -1.] * (n_turns>>1) + [1.] * (n_turns&1)
+            winner_or_not += [1., -1.] * (n_turns >> 1) + [1.] * (n_turns & 1)
         elif state == Winner.minus:
             print('winner: minus')
-            winner_or_not += [-1., 1.] * (n_turns>>1) + [-1.] * (n_turns&1)
+            winner_or_not += [-1., 1.] * (n_turns >> 1) + [-1.] * (n_turns & 1)
         else:
             print('draw')
+            if ignore_draw:
+                break
             winner_or_not += [0.] * n_turns
 
         arr_logs += _arr_logs

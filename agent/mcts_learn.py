@@ -38,6 +38,8 @@ def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_pat
         pi_mcts = kifu['pi_mcts']
         board_logs = kifu['board']
         plus_turns = kifu['plus_turn']
+        if len(wps) == 0:
+            continue
         mainNN.replay(wps, pi_mcts, board_logs, plus_turns, len(wps), beta)
 
     return save_model(mainNN, config)
