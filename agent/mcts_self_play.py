@@ -83,7 +83,7 @@ def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_pa
         else:
             print('draw')
             if ignore_draw:
-                break
+                continue
             winner_or_not += [0.] * n_turns
 
         arr_logs += _arr_logs
