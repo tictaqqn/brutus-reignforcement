@@ -22,7 +22,7 @@ weight = "results/bababax/models/2020-03-30-01-50-11-mainNN.h5"
 # ]
 
 if __name__ == "__main__":
-    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True)
+    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True, learning_rate=0.001)
     mc = config.mcts
     config.learn_func = 'self_play_and_learn'
 
