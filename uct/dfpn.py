@@ -1,13 +1,6 @@
 from typing import Union
-import math
-import time
-import copy
 import numpy as np
-
 from game.game_state import GameState, Winner
-from .uct_node import NodeHash, UctNode, UCT_HASH_SIZE, NOT_EXPANDED
-from agent.model_zero import ModelZero
-from agent.config import Config
 
 def dfpn(gs: GameState) -> Union[None, int]:
     state = gs.get_winner()
