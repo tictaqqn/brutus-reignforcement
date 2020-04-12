@@ -31,6 +31,11 @@ def dfpn(gs: GameState) -> Union[None, int]:
         return legal_moves[0]
 
     for a in legal_moves:
+        k = np.unravel_index(a, (7, 5, 9))[0]
+        if turn == -1:
+            k = 6 - k
+        if k > 3:
+            continue
         state = gs.move_with_id(a)
         if state == my_side:
             return a
