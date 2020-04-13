@@ -1,6 +1,7 @@
 from typing import Optional
 from enum import IntEnum
 from logging import getLogger
+import copy
 import numpy as np
 import wx
 from wx.core import CommandEvent
@@ -9,6 +10,7 @@ from .game_state import GameState, Winner
 from agent.model import QNetwork
 from agent.config import Config
 from uct.mcts import MCTSPlayer
+from uct.dfpn import dfpn
 
 logger = getLogger(__name__)
 
@@ -20,8 +22,18 @@ MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.json
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.h5"
 MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.json"
 WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-28-17-50-16-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-28-17-50-16-mainNN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-06-10-48-35-mainNN.json" # lr=0.001 from 4/4
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-10-48-35-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-06-10-57-07-mainNN.json" # lr=0.0001 from 4/4
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-10-57-07-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-06-13-55-43-mainNN.json" # lr=0.0001 3rd
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-13-55-43-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.json" # lr=0.0001 3rd
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.h5"
 
 def start() -> None:
     app = wx.App()
@@ -203,10 +215,14 @@ class Frame(wx.Frame):
             GameMode.black_human_vs_Zero,
             GameMode.white_human_vs_Zero
         ]:
-            self.player.gs.board = self.gs.board.copy()
-            self.player.gs.turn = self.gs.turn
-            self.player.gs.n_turns = self.gs.n_turns
-            best_action, best_wp, arr = self.player.go()
+            dfpn_r = dfpn(copy.deepcopy(self.gs))
+            if dfpn_r is not None:
+                best_action = dfpn_r
+            else:
+                self.player.gs.board = self.gs.board.copy()
+                self.player.gs.turn = self.gs.turn
+                self.player.gs.n_turns = self.gs.n_turns
+                best_action, best_wp, arr = self.player.go()
             state = self.gs.move_with_id(best_action)
         self.check_game_end(state)
         self.panel.Refresh()
@@ -255,7 +271,6 @@ class Frame(wx.Frame):
         dc.DrawLine(0, h - 1, w - 1, h - 1)
 
         # stones
-        # TODO: キングのデザイン
         brushes = {
             -2: wx.Brush("white"),
             -1: wx.Brush("white"),
@@ -269,7 +284,6 @@ class Frame(wx.Frame):
                 if c != 0:
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
-                    # TODO: デザイン改善の余地
 
         king_black_image = wx.Image('game/pictures/king_black.png').Scale(px*0.8, py*0.8)
         king_white_image = wx.Image('game/pictures/king_white.png').Scale(px*0.8, py*0.8)
