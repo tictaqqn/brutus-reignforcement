@@ -1,9 +1,11 @@
 from typing import Union
+import copy
 import numpy as np
 from game.game_state import GameState, Winner
 
 
 def dfpn(gs: GameState) -> Union[None, int]:
+    gs = copy.deepcopy(gs)
     state = gs.get_winner()
     if state != Winner.not_ended:
         print('bestmove resign')

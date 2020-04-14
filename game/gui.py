@@ -1,7 +1,6 @@
 from typing import Optional
 from enum import IntEnum
 from logging import getLogger
-import copy
 import numpy as np
 import wx
 from wx.core import CommandEvent
@@ -34,6 +33,7 @@ WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-13-55-43-mainNN.h5"
 # MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.json" # lr=0.0001 3rd
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.h5"
+
 
 def start() -> None:
     app = wx.App()
@@ -142,12 +142,12 @@ class Frame(wx.Frame):
         elif self.game_mode == GameMode.black_human_vs_Zero:
             self.player = MCTSPlayer(-1)
             self.player.load_model(MODEL_CONFIG_PATH_ZERO,
-                            WEIGHT_PATH_ZERO)
+                                   WEIGHT_PATH_ZERO)
             self.panel.Refresh()
         elif self.game_mode == GameMode.white_human_vs_Zero:
             self.player = MCTSPlayer(1)
             self.player.load_model(MODEL_CONFIG_PATH_ZERO,
-                            WEIGHT_PATH_ZERO)
+                                   WEIGHT_PATH_ZERO)
             self.panel.Refresh()
             self.OnTimer(0)
 
@@ -215,7 +215,7 @@ class Frame(wx.Frame):
             GameMode.black_human_vs_Zero,
             GameMode.white_human_vs_Zero
         ]:
-            dfpn_r = dfpn(copy.deepcopy(self.gs))
+            dfpn_r = dfpn(self.gs)
             if dfpn_r is not None:
                 best_action = dfpn_r
             else:
@@ -285,13 +285,15 @@ class Frame(wx.Frame):
                     dc.SetBrush(brushes[c])
                     dc.DrawEllipse(j * px, i * py, px, py)
 
-        king_black_image = wx.Image('game/pictures/king_black.png').Scale(px*0.8, py*0.8)
-        king_white_image = wx.Image('game/pictures/king_white.png').Scale(px*0.8, py*0.8)
+        king_black_image = wx.Image(
+            'game/pictures/king_black.png').Scale(px*0.8, py*0.8)
+        king_white_image = wx.Image(
+            'game/pictures/king_white.png').Scale(px*0.8, py*0.8)
         king_black_bitmap = king_black_image.ConvertToBitmap()
         king_white_bitmap = king_white_image.ConvertToBitmap()
         dc.DrawBitmap(king_black_bitmap, 2.1*px, 6.1*py, True)
         dc.DrawBitmap(king_white_bitmap, 2.1*px, 0.1*py, True)
-        
+
         if self.piece_selected:
             j = self.selected_x
             i = self.selected_y
