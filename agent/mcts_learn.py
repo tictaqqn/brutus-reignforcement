@@ -57,6 +57,6 @@ def save_model(mainNN, config: Config):
     return (model_config_path, weight_path, config_path)
 
 
-
 if __name__ == "__main__":
-    model_config, weight, _ = mcts_learn(['results/bababax/kifu/2020-02-26-11-42-06.npz'])
+    model_config, weight, _ = mcts_learn(
+        ['results/bababax/kifu/2020-02-26-11-42-06.npz'])

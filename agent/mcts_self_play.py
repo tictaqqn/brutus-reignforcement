@@ -7,8 +7,8 @@ from game.game_state import GameState, Winner
 from uct.mcts import MCTSPlayer
 
 
-def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None, 
-    model_config_path_minus=None, weight_path_minus=None, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False):
+def mcts_self_play(n_games, n_actions=50, model_config_path_plus=None, weight_path_plus=None,
+                   model_config_path_minus=None, weight_path_minus=None, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False):
 
     # action_logs = []
     # wp_logs = []

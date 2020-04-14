@@ -2,6 +2,7 @@ from typing import Union
 import numpy as np
 from game.game_state import GameState, Winner
 
+
 def dfpn(gs: GameState) -> Union[None, int]:
     state = gs.get_winner()
     if state != Winner.not_ended:
@@ -15,7 +16,6 @@ def dfpn(gs: GameState) -> Union[None, int]:
     else:
         my_side, other_side = Winner.minus, Winner.plus
 
-    
     # 探索開始時刻の記録
     # begin_time = time.time()
     legal_moves = list(gs.generate_legal_moves())
@@ -50,11 +50,7 @@ def dfpn(gs: GameState) -> Union[None, int]:
 
         if all_win:
             return a
-        
+
         gs.pop()
-            
+
     return None
-
-        
-
-        

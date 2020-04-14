@@ -70,7 +70,7 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
 
         # 行動決定と価値計算のQネットワークをおなじにする
         targetQN.model.set_weights(mainQN.model.get_weights())
-        
+
         considered_well = False
 
         while not considered_well:
@@ -104,10 +104,12 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
                         considered_well = False
                         break
                     episode_reward += reward  # 合計報酬を更新
-                    memory.add((board, action, reward, next_board))     # メモリの更新する
+                    # メモリの更新する
+                    memory.add((board, action, reward, next_board))
                     # Qネットワークの重みを学習・更新する replay
                     if len(memory) > qc.batch_size:  # and not islearned:
-                        mainQN.replay(memory, qc.batch_size, qc.gamma, targetQN)
+                        mainQN.replay(memory, qc.batch_size,
+                                      qc.gamma, targetQN)
                     if qc.DQN_MODE:
                         # 行動決定と価値計算のQネットワークをおなじにする
                         targetQN.model.set_weights(mainQN.model.get_weights())
@@ -115,8 +117,8 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
                     total_reward_vec = np.hstack(
                         (total_reward_vec[1:], episode_reward))  # 報酬を記録
                     print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
-                        % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
-                            'plus' if state == Winner.plus else 'minus'))
+                          % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
+                             'plus' if state == Winner.plus else 'minus'))
                     break
 
                 state, _ = gs.random_play()
@@ -125,7 +127,7 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
                     reward = qc.reward_win
                 else:
                     reward = calc_reward(qc, next_board)
-                
+
                 if t == 0:
                     reward += qc.reward_consider_checking
 
@@ -145,8 +147,8 @@ def learn_guard_checkmate(model_config_path=None, weight_path=None) -> None:
                     total_reward_vec = np.hstack(
                         (total_reward_vec[1:], episode_reward))  # 報酬を記録
                     print('%d/%d: Episode finished after %d time steps / mean %f winner: %s'
-                        % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
-                            'plus' if state == Winner.plus else 'minus'))
+                          % (episode+1, qc.num_episodes, t + 1, total_reward_vec.mean(),
+                             'plus' if state == Winner.plus else 'minus'))
                     break
 
         # 複数施行の平均報酬で終了を判断
