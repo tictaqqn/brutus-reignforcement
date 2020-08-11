@@ -43,17 +43,23 @@ weight = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
 # ]
 
 if __name__ == "__main__":
-    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True, learning_rate=0.0001)
+    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True, learning_rate=0.001)
     mc = config.mcts
     config.learn_func = 'self_play_and_learn'
+    config.tsumero = True
+    config.all_random = True
+
     # model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
     # exit()
+    if config.tsumero:
+        from tsumero.mcts_self_play_tsumero import mcts_self_play_tsumero
+        mcts_self_play = mcts_self_play_tsumero
 
     for k in range(1000):
         config.n_period = k
         paths = []
         for _ in range(1):
             path = mcts_self_play(100, 40, model_config, weight, model_config, weight,
-                                  mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw)
+                                  mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw, config.all_random)
             paths.append(path)
         model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
