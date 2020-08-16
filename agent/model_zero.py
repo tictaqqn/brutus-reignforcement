@@ -59,7 +59,6 @@ class ModelZero:
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
-        # print(x.shape)
         x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
 
