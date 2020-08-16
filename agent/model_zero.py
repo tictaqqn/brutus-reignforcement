@@ -55,11 +55,11 @@ class ModelZero:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input((2, 7, 5))
+        in_x = x = Input(shape=(7, 5, 2))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
 
         for _ in range(mc.res_layer_num):
@@ -67,9 +67,9 @@ class ModelZero:
 
         res_out = x
         # for policy output
-        x = Conv2D(filters=2, kernel_size=1, data_format="channels_first",
+        x = Conv2D(filters=2, kernel_size=1, data_format="channels_last",
                    kernel_regularizer=l2(mc.l2_reg))(res_out)
-        x = BatchNormalization(axis=1)(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Flatten()(x)
         # no output for 'pass'
@@ -94,19 +94,19 @@ class ModelZero:
         mc = self.config.model
         in_x = x
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Add()([in_x, x])
         x = Activation("relu")(x)
         return x
 
     # 重みの学習
     def replay(self, wps, pi_mcts, board_logs, plus_turns, batch_size: int, beta: float) -> None:
-        inputs = np.zeros((batch_size, 2, 7, 5))
+        inputs = np.zeros((batch_size, 7, 5, 2))
         policy_true = np.zeros((batch_size, 315))
         values_true = np.zeros((batch_size)) 
         indices = np.random.choice(

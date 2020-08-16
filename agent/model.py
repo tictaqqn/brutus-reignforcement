@@ -52,11 +52,11 @@ class QNetwork:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input((2, 7, 5))
+        in_x = x = Input((7, 5, 2))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
 
         for _ in range(mc.res_layer_num):
@@ -64,9 +64,9 @@ class QNetwork:
 
         res_out = x
         # for policy output
-        x = Conv2D(filters=2, kernel_size=1, data_format="channels_first",
+        x = Conv2D(filters=2, kernel_size=1, data_format="channels_last",
                    kernel_regularizer=l2(mc.l2_reg))(res_out)
-        x = BatchNormalization(axis=1)(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Flatten()(x)
         # no output for 'pass'
@@ -86,19 +86,19 @@ class QNetwork:
         mc = self.config.model
         in_x = x
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_first", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=1)(x)
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
+        x = BatchNormalization(axis=3)(x)
         x = Add()([in_x, x])
         x = Activation("relu")(x)
         return x
 
     # 重みの学習
     def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
-        inputs = np.zeros((batch_size, 2, 7, 5))
+        inputs = np.zeros((batch_size, 7, 5, 2))
         targets = np.zeros((batch_size, 315))
         mini_batch = memory.sample(batch_size)
 

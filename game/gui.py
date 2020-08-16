@@ -15,16 +15,16 @@ logger = getLogger(__name__)
 
 MODEL_CONFIG_PATH = "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.json"
 WEIGHT_PATH = "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.json"
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-02-26-12-17-48-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.json"
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-09-02-13-23-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.json"
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-10-13-21-13-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.json"
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-03-30-16-12-58-mainNN.h5"
+# MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.json"
+# WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
 # MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-06-10-48-35-mainNN.json" # lr=0.001 from 4/4
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-10-48-35-mainNN.h5"
 # MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-06-10-57-07-mainNN.json" # lr=0.0001 from 4/4
@@ -33,6 +33,8 @@ WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-13-55-43-mainNN.h5"
 # MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.json" # lr=0.0001 3rd
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-08-11-15-32-58-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bababax/models/2020-08-11-15-32-58-mainNN.h5"
 
 
 def start() -> None:
