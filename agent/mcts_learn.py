@@ -39,7 +39,6 @@ def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_pat
 
     begin_time = time.time()
     for path in kifus:
-        print(path)
         # with open(path, 'rb') as f:
         #     kifu = pickle.load(f)
         kifu = np.load(path)
@@ -58,7 +57,7 @@ def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_pat
         pi_mcts = pi_mcts / pi_mcts.sum(axis=1).reshape((len(wps), 1))
         begin_time = time.time()
         mainNN.replay(wps, pi_mcts, board_logs, plus_turns, weights, len(wps), beta)
-        print(f'learn time: {int((ime.time() - begin_time) * 1000)}ms')
+        print(f'learn time: {int((time.time() - begin_time) * 1000)}ms')
 
     return save_model(mainNN, config, folder)
 
