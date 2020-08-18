@@ -35,7 +35,8 @@ class PlayoutInfo:
 
 
 class MCTSPlayer:
-    def __init__(self, my_side: int, temperature=100.0, n_playout=300, c_puct=1.0):
+    def __init__(self, my_side: int, temperature=100.0, n_playout=150, c_puct=1.0, n_actions = 200, config = Config()):
+        self.config = config
         self.model = None  # モデル
 
         # ノードの情報
@@ -47,6 +48,7 @@ class MCTSPlayer:
         # プレイアウト回数管理
         self.po_info = PlayoutInfo()
         self.playout = n_playout
+        self.n_actions = n_actions
 
         # 温度パラメータ
         self.temperature = temperature
@@ -79,12 +81,15 @@ class MCTSPlayer:
         child_num = current_node.child_num
         child_win = current_node.child_win
         child_move_count = current_node.child_move_count
+        default_child_win = current_node.value_win
 
         if gs.turn != self.player:
-            child_win = 1 - child_win
+            child_win = child_move_count - child_win
+            default_child_win = 1 - default_child_win
+        default_child_win = max(0.5, default_child_win)
 
         q = np.divide(child_win, child_move_count, out=np.repeat(
-            np.float32(0.5), child_num), where=child_move_count != 0)
+            np.float32(default_child_win), child_num), where=child_move_count != 0)
         u = np.sqrt(np.float32(current_node.move_count)) / \
             (1 + child_move_count)
         ucb = q + self.c_puct * current_node.nnrate * u
@@ -162,6 +167,8 @@ class MCTSPlayer:
             return 1.0  # 反転して値を返すため1を返す
         if winner == self.other_side:
             return 0.0
+        if gs.n_turns >= 2 * self.n_actions:
+            return 0.5  # 深く読みすぎているので引き分け扱い
         child_move = current_node.child_move
         child_move_count = current_node.child_move_count
         child_index = current_node.child_index
@@ -204,9 +211,28 @@ class MCTSPlayer:
 
     def eval_node(self, gs: GameState, index):
         """ノードを評価"""
-        x = gs.to_inputs(flip=gs.turn == -1)
 
+        current_node = self.uct_nodes[index]
+        winner = gs.get_winner()
+        if winner == self.my_side:
+            current_node.value_win = 1.0  # 反転して値を返すため1を返す
+            current_node.evaled = True
+            return
+        if winner == self.other_side:
+            current_node.value_win = 0.0
+            current_node.evaled = True
+            return
+        if gs.n_turns > 2 * self.n_actions:
+            current_node.value_win = 0.5  # 深く読みすぎているので引き分け扱い
+            current_node.evaled = True
+            return
+
+        x = gs.to_inputs(flip=gs.turn == -1)        
+        self.modeltime -= time.time()
         logits, value = self.model.model.predict(x)
+        self.modeltime += time.time()
+        self.modelcount += 1
+
         if gs.turn == -1:
             logits[0] = GameState.flip_turn_outputs(logits[0])
         if gs.turn != self.player:
@@ -214,7 +240,6 @@ class MCTSPlayer:
         # logits = np.zeros(315)
         # value = 0.3
 
-        current_node = self.uct_nodes[index]
         child_num = current_node.child_num
         child_move = current_node.child_move
         color = self.node_hash[index].color
@@ -225,9 +250,12 @@ class MCTSPlayer:
             legal_move_labels.append(
                 child_move[i])
 
-        # Boltzmann分布
-        probabilities = softmax_temperature_with_normalize(
-            logits[0, legal_move_labels], self.temperature)
+        # # Boltzmann分布
+        # probabilities = softmax_temperature_with_normalize(
+        #     logits[0, legal_move_labels], self.temperature)
+
+        probabilities = logits[0, legal_move_labels]
+        probabilities /= sum(probabilities)
 
         # ノードの値を更新
         current_node.nnrate = probabilities
@@ -261,18 +289,22 @@ class MCTSPlayer:
     #     self.node_hash.initialize()
     #     print('readyok')
 
-    def go(self):
+    def go(self, verbose=True):
+
+        self.modeltime = 0
+        self.modelcount = 0
+
         state = self.gs.get_winner()
         if state != Winner.not_ended:
-            print('bestmove resign')
-            print(self.gs)
+            if (verbose):
+                print('bestmove resign')
+                print(self.gs)
             return None, state, None
 
-        # 探索情報をクリア
-        self.po_info.count = 0
-
         # 古いハッシュを削除
-        self.node_hash.delete_old_hash(self.gs, self.uct_nodes)
+        # print(self.node_hash.used)
+        # self.node_hash.delete_old_hash(self.gs, self.uct_nodes)
+        # print(self.node_hash.used)
 
         # 探索開始時刻の記録
         begin_time = time.time()
@@ -283,12 +315,16 @@ class MCTSPlayer:
         # ルートノードの展開
         self.current_root = self.expand_node(self.gs)
 
+        # 探索情報をクリア
+        self.po_info.count = int(self.uct_nodes[self.current_root].move_count / 4)
+
         # 候補手が1つの場合は、その手を返す
         current_node = self.uct_nodes[self.current_root]
         child_num = current_node.child_num
         child_move = current_node.child_move
         if child_num == 1:
-            print('bestmove', child_move[0])
+            if (verbose):
+                print('bestmove', child_move[0])
             arr = np.zeros(315, dtype=int)
             arr[child_move[0]] = 1
             return child_move[0], None, arr
@@ -301,17 +337,18 @@ class MCTSPlayer:
             # 1回プレイアウトする
             self.uct_search(self.gs, self.current_root)
             # 探索を打ち切るか確認
-            if self.interruption_check() or not self.node_hash.enough_size:
+            # if self.interruption_check() or not self.node_hash.enough_size:
+            if not self.node_hash.enough_size:
                 break
 
         # 探索にかかった時間を求める
         finish_time = time.time() - begin_time
 
         child_move_count = current_node.child_move_count
-        if self.gs.n_turns < 10:
+        if self.gs.n_turns < 1000:
             # 訪問回数に応じた確率で手を選択する
             selected_index = np.random.choice(
-                np.arange(child_num), p=child_move_count/np.sum(child_move_count))
+                np.arange(child_num), p=((child_move_count ** self.config.mcts.tau)/np.sum(child_move_count ** self.config.mcts.tau)))
         else:
             # 訪問回数最大の手を選択するnp.random.choice(np.where(ucb == np.max(ucb))[0])
             # selected_index = np.argmax(child_move_count)
@@ -321,11 +358,13 @@ class MCTSPlayer:
         child_win = current_node.child_win
 
         # for debug
-        for i in range(child_num):
-            print('{:3}:{:5} move_count:{:4} nn_rate:{:.5f} win_rate:{:.5f}'.format(
-                i, child_move[i], child_move_count[i],
-                current_node.nnrate[i],
-                child_win[i] / child_move_count[i] if child_move_count[i] > 0 else 0))
+        if (verbose):
+            print('win_rate:{:.5f}'.format(current_node.value_win[0][0]))
+            for i in range(child_num):
+                print('{:3}:{:5} move_count:{:4} nn_rate:{:.5f} win_rate:{:.5f}'.format(
+                    i, child_move[i], child_move_count[i],
+                    current_node.nnrate[i],
+                    child_win[i] / child_move_count[i] if child_move_count[i] > 0 else 0))
 
         # 選択した着手の勝率の算出
         best_wp = child_win[selected_index] / child_move_count[selected_index]
@@ -343,14 +382,19 @@ class MCTSPlayer:
         # else:
         #     cp = int(-math.log(1.0 / best_wp - 1.0) * 600)
 
-        print('info nps {} time {} nodes {} hashfull {} score wp {} pv {}'.format(
-            int(current_node.move_count / finish_time),
-            int(finish_time * 1000),
-            current_node.move_count,
-            int(self.node_hash.get_usage_rate() * 1000),
-            best_wp, bestmove))
+        if (verbose):
+            print('info n_turns {} nps {} time {} modeltime {} modelcount {} nodes {} hashfull {} score wp {} pv {}'.format(
+                int(self.gs.n_turns),
+                int(current_node.move_count / finish_time),
+                int(finish_time * 1000),
+                int(self.modeltime * 1000),
+                int(self.modelcount),
+                current_node.move_count,
+                int(self.node_hash.get_usage_rate() * 1000),
+                best_wp, bestmove))
 
-        print('bestmove', bestmove)
+        # if (verbose):
+        #     print('bestmove', bestmove)
 
         arr = child_move_count_as_output_array_shape(
             child_move, child_move_count, self.player == 1)

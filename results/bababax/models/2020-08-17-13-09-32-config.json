@@ -1,0 +1,39 @@
+{
+    "model": {
+        "cnn_filter_num": 16,
+        "cnn_filter_size": 3,
+        "res_layer_num": 1,
+        "l2_reg": 0.0001,
+        "value_fc_size": 256,
+        "learning_rate": 0.01
+    },
+    "Qlearn": {
+        "DQN_MODE": false,
+        "num_episodes": 300,
+        "max_number_of_steps": 25,
+        "num_consecutive_iterations": 10,
+        "save_interval": 100,
+        "gamma": 0.99,
+        "memory_size": 10000,
+        "batch_size": 32,
+        "reward_win": 10000,
+        "reward_lose": -10000,
+        "reward_stone_mine": 1,
+        "reward_stone_against": -1,
+        "reward_front_mine": 0,
+        "reward_front_against": 0,
+        "reward_check_mine": 500,
+        "reward_check_against": -4000,
+        "reward_consider_checking": 1000
+    },
+    "mcts": {
+        "temperature": 10000.0,
+        "n_playout": 150,
+        "c_puct": 1.4,
+        "ignore_draw": true,
+        "tau": 2
+    },
+    "pre_trained": null,
+    "learn_func": "self_play_and_learn",
+    "n_period": 0
+}

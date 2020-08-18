@@ -3,12 +3,13 @@ import pickle
 import datetime
 import json
 import numpy as np
+import time
 
 from .config import Config
 from .model_zero import ModelZero
 
 
-def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_path=None, beta=1.0):
+def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_path=None, beta=1.0, weight_reduction = 0.1, folder = "results/bababax/models"):
 
     if config is None:
         config = Config()
@@ -30,26 +31,43 @@ def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_pat
 
         config.pre_trained = weight_path
 
+    wps = np.empty(shape=(0, ))
+    weights = np.empty(shape=(0, ))
+    pi_mcts = np.empty(shape=(0, 315))
+    board_logs = np.empty(shape=(0, 7, 5))
+    plus_turns = np.empty(shape=(0, ))
+
+    begin_time = time.time()
     for path in kifus:
+        print(path)
         # with open(path, 'rb') as f:
         #     kifu = pickle.load(f)
         kifu = np.load(path)
-        wps = kifu['wp']
-        pi_mcts = kifu['pi_mcts']
-        board_logs = kifu['board']
-        plus_turns = kifu['plus_turn']
-        if len(wps) == 0:
+        wp = kifu['wp']
+        if len(wp) == 0:
             continue
-        mainNN.replay(wps, pi_mcts, board_logs, plus_turns, len(wps), beta)
+        wps = np.append(wps, wp)
+        pi_mcts = np.append(pi_mcts, kifu['pi_mcts'], axis = 0)
+        board_logs = np.append(board_logs, kifu['board'], axis = 0)
+        plus_turns = np.append(plus_turns, kifu['plus_turn'])
+        weights *= (1 - weight_reduction)
+        weights = np.append(weights, np.ones(shape=(len(wp), )))
+    print(f'preprocess time: {int((time.time() - begin_time) * 1000)}ms')
 
-    return save_model(mainNN, config)
+    if len(wps) > 0:
+        pi_mcts = pi_mcts / pi_mcts.sum(axis=1).reshape((len(wps), 1))
+        begin_time = time.time()
+        mainNN.replay(wps, pi_mcts, board_logs, plus_turns, weights, len(wps), beta)
+        print(f'learn time: {int((ime.time() - begin_time) * 1000)}ms')
+
+    return save_model(mainNN, config, folder)
 
 
-def save_model(mainNN, config: Config):
+def save_model(mainNN, config: Config, folder):
     d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    model_config_path = f"results/bababax/models/{d}-mainNN.json"
-    weight_path = f"results/bababax/models/{d}-mainNN.h5"
-    config_path = f"results/bababax/models/{d}-config.json"
+    model_config_path = folder + f"/{d}-mainNN.json"
+    weight_path = folder + f"/{d}-mainNN.h5"
+    config_path = folder + f"/{d}-config.json"
     mainNN.save(model_config_path,
                 weight_path)
     with open(config_path, 'x') as f:
@@ -59,4 +77,4 @@ def save_model(mainNN, config: Config):
 
 if __name__ == "__main__":
     model_config, weight, _ = mcts_learn(
-        ['results/bababax/kifu/2020-08-11-15-30-16.npz'])
+        ['results/bekasa/2020-08-17-15-01/kifu/2020-08-17-15-17-52.npz', 'results/bekasa/2020-08-17-15-01/kifu/2020-08-17-15-19-26.npz'])

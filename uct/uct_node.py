@@ -1,7 +1,7 @@
 ﻿from typing import List
 from game.game_state import GameState
 
-UCT_HASH_SIZE = 4096  # 2のn乗であること 1回の思考でのシミュレーション回数の10倍以上
+UCT_HASH_SIZE = 65536  # 2のn乗であること 1回の思考でのシミュレーション回数の10倍以上
 UCT_HASH_LIMIT = UCT_HASH_SIZE * 9 / 10
 
 # 未展開のノードのインデックス
@@ -87,7 +87,8 @@ class NodeHash:
         while True:
             if not self.node_hash[i].flag:
                 return UCT_HASH_SIZE
-            elif self.node_hash[i].hash == hash and self.node_hash[i].color == color and self.node_hash[i].moves == moves:
+            # elif self.node_hash[i].hash == hash and self.node_hash[i].color == color and self.node_hash[i].moves == moves:
+            elif self.node_hash[i].hash == hash and self.node_hash[i].color == color and (self.node_hash[i].moves > 0) == (moves > 0):
                 return i
             i += 1
             if i >= UCT_HASH_SIZE:

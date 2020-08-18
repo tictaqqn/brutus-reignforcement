@@ -67,7 +67,7 @@ class ModelZero:
 
         res_out = x
         # for policy output
-        x = Conv2D(filters=2, kernel_size=1, data_format="channels_last",
+        x = Conv2D(filters=8, kernel_size=mc.cnn_filter_size, data_format="channels_last",
                    kernel_regularizer=l2(mc.l2_reg))(res_out)
         x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
@@ -83,10 +83,10 @@ class ModelZero:
 
         self.model = Model(in_x, [policy_out, value_out], name="slipe_model")
         self.compile_model()
-        self.model.summary()
+        # self.model.summary()
 
     def compile_model(self):
-        self.optimizer = SGD(lr=1e-2, momentum=0.9)
+        self.optimizer = SGD(lr=self.config.model.learning_rate, momentum=0.9)
         losses = [objective_function_for_policy, objective_function_for_value]
         self.model.compile(optimizer=self.optimizer, loss=losses)
 
@@ -105,24 +105,25 @@ class ModelZero:
         return x
 
     # 重みの学習
-    def replay(self, wps, pi_mcts, board_logs, plus_turns, batch_size: int, beta: float) -> None:
+    def replay(self, wps, pi_mcts, board_logs, plus_turns, weights, batch_size: int, beta: float) -> None:
         inputs = np.zeros((batch_size, 7, 5, 2))
         policy_true = np.zeros((batch_size, 315))
-        values_true = np.zeros((batch_size)) 
+        values_true = np.zeros((batch_size))
+        input_weights = np.zeros((batch_size))
         indices = np.random.choice(
             np.arange(len(wps)), size=batch_size, replace=False)
-        mini_batch = [(wps[i], pi_mcts[i], board_logs[i], plus_turns[i]) for i in indices]
+        mini_batch = [(wps[i], pi_mcts[i], board_logs[i], plus_turns[i], weights[i]) for i in indices]
 
-        for i, (winner, pi, board, plus_turn) in enumerate(mini_batch):
+        for i, (winner, pi, board, plus_turn, weight) in enumerate(mini_batch):
             gs = GameState()
             gs.board = board
             inputs[i] = gs.to_inputs(flip=not plus_turn) # shape=(4, 5, 5)
             policy_true[i] = pi ** beta
             values_true[i] = winner
+            input_weights[i] = weight
 
         # epochsは訓練データの反復回数、verbose=0は表示なしの設定
-        self.model.fit(inputs, [policy_true, values_true], epochs=1, verbose=0)
-
+        self.model.fit(inputs, [policy_true, values_true], sample_weight=input_weights, epochs=1, verbose=0, shuffle=True)
 
     @staticmethod
     def fetch_digest(weight_path: str):
@@ -140,7 +141,7 @@ class ModelZero:
             self.model.load_weights(weight_path)
             self.model.compile(loss='mse',
                                optimizer=Adam(lr=self.config.model.learning_rate))
-            self.model.summary()
+            # self.model.summary()
             self.digest = self.fetch_digest(weight_path)
             logger.debug(f"loaded model digest = {self.digest}")
             return True

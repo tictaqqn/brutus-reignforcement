@@ -1,11 +1,16 @@
+import datetime
+import os
 from agent.mcts_self_play import mcts_self_play
 from agent.mcts_learn import mcts_learn
 from agent.config import Config
 
 model_config = None
 weight = None
-model_config = "results/bababax/models/2020-04-04-10-32-50-mainNN.json"
-weight = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
+model_config = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.json"
+weight = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.h5"
+
+kifu_folders = []
+kifu_folders = ['results/bekasa/2020-08-18-04-14/kifu']
 
 # paths = [    
 #     "results/bababax/kifu/2020-03-30-19-22-31.npz",
@@ -43,17 +48,26 @@ weight = "results/bababax/models/2020-04-04-10-32-50-mainNN.h5"
 # ]
 
 if __name__ == "__main__":
-    config = Config(temperature=10000., c_puct=1.4, ignore_draw=True, learning_rate=0.0001)
+    d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
+    config = Config(temperature=10000., n_playout=150, c_puct=1.4, ignore_draw=False)
     mc = config.mcts
     config.learn_func = 'self_play_and_learn'
     # model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
     # exit()
 
-    for k in range(1000):
+    basedir = f'results/bekasa/{d}'
+    os.makedirs(basedir + '/kifu')
+    os.makedirs(basedir + '/models')
+
+    paths = []
+    for kifu_folder in kifu_folders:
+        paths.extend([kifu_folder + '/' + kifu_file for kifu_file in os.listdir(kifu_folder)])
+
+    for k in range(1):
+        print(f'n_period:{k}')
         config.n_period = k
-        paths = []
         for _ in range(1):
-            path = mcts_self_play(100, 40, model_config, weight, model_config, weight,
-                                  mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw)
+            path = mcts_self_play(1, 100, model_config, weight, model_config, weight,
+                                  mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw, folder=(basedir + '/kifu'), verbose=True)
             paths.append(path)
-        model_config, weight, _ = mcts_learn(paths, config, model_config, weight)
+        model_config, weight, _ = mcts_learn(paths, config, model_config, weight, weight_reduction = 0.1, folder=(basedir + '/models'))

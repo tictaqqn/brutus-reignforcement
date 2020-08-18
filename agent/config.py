@@ -15,9 +15,9 @@ class Config(ConfigBase):
 class ModelConfig(ConfigBase):
 
     def __init__(self, learning_rate):
-        self.cnn_filter_num = 32
-        self.cnn_filter_size = 5
-        self.res_layer_num = 2
+        self.cnn_filter_num = 16
+        self.cnn_filter_size = 3
+        self.res_layer_num = 1
         self.l2_reg = 1e-4
         self.value_fc_size = 256
         self.learning_rate = learning_rate  # もっと小さいほうがいい?
@@ -58,3 +58,4 @@ class MCTSConfig(ConfigBase):
         self.n_playout = n_playout
         self.c_puct = c_puct
         self.ignore_draw = ignore_draw
+        self.tau = 2
