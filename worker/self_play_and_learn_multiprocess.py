@@ -2,6 +2,7 @@ import datetime
 import os
 import multiprocessing
 import ctypes
+import tensorflow as tf
 from agent.mcts_self_play import mcts_self_play
 from agent.mcts_learn import mcts_learn
 from agent.config import Config
@@ -31,19 +32,25 @@ def process_func(global_model_config, global_weight, shared_queue, shared_lock, 
         if (weight == ''):
             weight = None
         path = mcts_self_play(1, 100, model_config, weight, model_config, weight,
-                              mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw, folder=(basedir + '/kifu'), n_process=n_process, verbose=True)
+                              mc.temperature, mc.n_playout, mc.c_puct, mc.ignore_draw, folder=(basedir + '/kifu'), n_process=n_process, verbose=False)
         with shared_lock:
             shared_queue.put(path)
         k += 1
 
 
 if __name__ == "__main__":
+    # #tensorflow accerelation
+    # tf.config.optimizer.set_jit(True)
+
     # configs
     kifu_folders = []
+    kifu_folders = ['results/bekasa/2020-08-22-00-36/kifu',]
     n_processes = 6
     MAX_strlen = 256
     model_config = None
     weight = None
+    model_config = "results/bekasa/2020-08-22-00-36/models/2020-08-22-15-32-59-mainNN.json"
+    weight = "results/bekasa/2020-08-22-00-36/models/2020-08-22-15-32-59-mainNN.h5"
 
     global_model_config = multiprocessing.Array(ctypes.c_char, MAX_strlen)
     global_weight = multiprocessing.Array(ctypes.c_char, MAX_strlen)
@@ -85,6 +92,8 @@ if __name__ == "__main__":
                     paths.append(shared_queue.get_nowait())
                 except:
                     print('Error')
+        while (len(paths) > 256):
+            del paths[0]
         model_config, weight, _ = mcts_learn(paths, config, model_config, weight, weight_reduction = 0.1 / n_processes, folder=(basedir + '/models'))
         with global_model_config.get_lock():
             global_model_config.value = (model_config if model_config is not None else '').encode()

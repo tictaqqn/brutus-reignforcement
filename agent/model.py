@@ -52,7 +52,7 @@ class QNetwork:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input((7, 5, 2))
+        in_x = x = Input((7, 5, 3))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
@@ -98,7 +98,7 @@ class QNetwork:
 
     # 重みの学習
     def replay(self, memory: Memory, batch_size: int, gamma: float, targetQN: 'QNetwork') -> None:
-        inputs = np.zeros((batch_size, 7, 5, 2))
+        inputs = np.zeros((batch_size, 7, 5, 3))
         targets = np.zeros((batch_size, 315))
         mini_batch = memory.sample(batch_size)
 

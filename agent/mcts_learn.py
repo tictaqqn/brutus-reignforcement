@@ -4,10 +4,14 @@ import datetime
 import json
 import numpy as np
 import time
+import os
 
 from .config import Config
 from .model_zero import ModelZero
 
+kifu_folders = []
+kifu_folders = ['results/bekasa/2020-08-20-01-22/kifu',
+                'results/bekasa/2020-08-20-10-41/kifu']
 
 def mcts_learn(kifus: List[str], config=None, model_config_path=None, weight_path=None, beta=1.0, weight_reduction = 0.1, folder = "results/bababax/models"):
 
@@ -75,5 +79,15 @@ def save_model(mainNN, config: Config, folder):
 
 
 if __name__ == "__main__":
-    model_config, weight, _ = mcts_learn(
-        ['results/bekasa/2020-08-17-15-01/kifu/2020-08-17-15-17-52.npz', 'results/bekasa/2020-08-17-15-01/kifu/2020-08-17-15-19-26.npz'])
+    config = Config(temperature=10000., n_playout=150, c_puct=1.4, ignore_draw=False)
+
+    d = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M')
+    basedir = f'results/bekasa/{d}'
+    os.makedirs(basedir + '/kifu')
+    os.makedirs(basedir + '/models')
+
+    paths = []
+    for kifu_folder in kifu_folders:
+        paths.extend([kifu_folder + '/' + kifu_file for kifu_file in os.listdir(kifu_folder)])
+
+    model_config, weight, _ = mcts_learn(paths, config, folder=(basedir + '/models'))

@@ -13,10 +13,10 @@ import keras.backend as K
 from keras.engine.topology import Input
 from keras.engine.training import Model
 from keras.layers.convolutional import Conv2D
-from keras.layers.core import Activation, Dense, Flatten
+from keras.layers.core import Activation, Dense, Flatten, Dropout
 from keras.layers.merge import Add
 from keras.layers.normalization import BatchNormalization
-from keras.losses import mean_squared_error
+from keras.losses import mean_squared_error, categorical_crossentropy
 from keras.optimizers import Adam, SGD
 from keras.regularizers import l2
 
@@ -28,8 +28,8 @@ logger = getLogger(__name__)
 
 def objective_function_for_policy(y_true, y_pred):
     # can use categorical_crossentropy??
-    return K.sum(-y_true * K.log(y_pred + K.epsilon()), axis=-1)
-
+    return categorical_crossentropy(y_true, y_pred) - categorical_crossentropy(y_true, y_true) # for debug
+    # return categorical_crossentropy(y_true, y_pred)
 
 def objective_function_for_value(y_true, y_pred):
     return mean_squared_error(y_true, y_pred)
@@ -55,31 +55,34 @@ class ModelZero:
 
     def build(self) -> None:
         mc = self.config.model
-        in_x = x = Input(shape=(7, 5, 2))
+        in_x = x = Input(shape=(7, 5, 3))
 
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
-        x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
 
         for _ in range(mc.res_layer_num):
             x = self._build_residual_block(x)
+        x = Activation("relu")(x)
 
         res_out = x
         # for policy output
-        x = Conv2D(filters=8, kernel_size=mc.cnn_filter_size, data_format="channels_last",
+        x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, data_format="channels_last",
                    kernel_regularizer=l2(mc.l2_reg))(res_out)
         x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Flatten()(x)
         # no output for 'pass'
-        policy_out = Dense(315, kernel_regularizer=l2(mc.l2_reg),
-                    activation="softmax", name="policy_out")(x)
 
         x = Dense(mc.value_fc_size, kernel_regularizer=l2(mc.l2_reg),
                  activation="relu")(x)
+        policy_out = Dense(mc.value_fc_size, kernel_regularizer=l2(mc.l2_reg),
+                 activation="relu")(x)
+        policy_out = Dense(315, kernel_regularizer=l2(mc.l2_reg),
+                    activation="softmax", name="policy_out")(policy_out)
+        value_out = Dense(32, kernel_regularizer=l2(mc.l2_reg), activation="relu")(x)
         value_out = Dense(1, kernel_regularizer=l2(mc.l2_reg),
-                          activation="tanh", name="value_out")(x)
+                          activation="tanh", name="value_out")(value_out)
 
         self.model = Model(in_x, [policy_out, value_out], name="slipe_model")
         self.compile_model()
@@ -93,20 +96,21 @@ class ModelZero:
     def _build_residual_block(self, x):
         mc = self.config.model
         in_x = x
-        x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
-                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
         x = BatchNormalization(axis=3)(x)
         x = Activation("relu")(x)
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
                    data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
         x = BatchNormalization(axis=3)(x)
+        x = Activation("relu")(x)
+        x = Dropout(1./3)(x)
+        x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_filter_size, padding="same",
+                   data_format="channels_last", kernel_regularizer=l2(mc.l2_reg))(x)
         x = Add()([in_x, x])
-        x = Activation("relu")(x)
         return x
 
     # 重みの学習
     def replay(self, wps, pi_mcts, board_logs, plus_turns, weights, batch_size: int, beta: float) -> None:
-        inputs = np.zeros((batch_size, 7, 5, 2))
+        inputs = np.zeros((batch_size, 7, 5, 3))
         policy_true = np.zeros((batch_size, 315))
         values_true = np.zeros((batch_size))
         input_weights = np.zeros((batch_size))
@@ -139,8 +143,7 @@ class ModelZero:
             with open(config_path, "rt") as f:
                 self.model = Model.from_config(json.load(f))
             self.model.load_weights(weight_path)
-            self.model.compile(loss='mse',
-                               optimizer=Adam(lr=self.config.model.learning_rate))
+            self.compile_model()
             # self.model.summary()
             self.digest = self.fetch_digest(weight_path)
             logger.debug(f"loaded model digest = {self.digest}")

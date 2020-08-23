@@ -1,0 +1,39 @@
+{
+    "model": {
+        "cnn_filter_num": 32,
+        "cnn_filter_size": 3,
+        "res_layer_num": 3,
+        "l2_reg": 1e-05,
+        "value_fc_size": 1024,
+        "learning_rate": 0.003
+    },
+    "Qlearn": {
+        "DQN_MODE": false,
+        "num_episodes": 300,
+        "max_number_of_steps": 25,
+        "num_consecutive_iterations": 10,
+        "save_interval": 100,
+        "gamma": 0.99,
+        "memory_size": 10000,
+        "batch_size": 32,
+        "reward_win": 10000,
+        "reward_lose": -10000,
+        "reward_stone_mine": 1,
+        "reward_stone_against": -1,
+        "reward_front_mine": 0,
+        "reward_front_against": 0,
+        "reward_check_mine": 500,
+        "reward_check_against": -4000,
+        "reward_consider_checking": 1000
+    },
+    "mcts": {
+        "temperature": 10000.0,
+        "n_playout": 150,
+        "c_puct": 1.4,
+        "ignore_draw": false,
+        "tau": 3
+    },
+    "pre_trained": "results/bekasa/2020-08-22-00-36/models/2020-08-22-15-27-06-mainNN.h5",
+    "learn_func": "self_play_and_learn",
+    "n_period": 99
+}

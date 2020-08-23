@@ -82,13 +82,22 @@ class GameState:
     def to_inputs(self, flip=False) -> np.ndarray:
         """強化学習用の入力
         flipで盤面を先手用と後手用の反転"""
-        arr = np.empty((1, 7, 5, 2), dtype=bool)
+        arr = np.empty((1, 7, 5, 3), dtype=bool)
         if not flip:
             board = self.board
         else:
             board = np.flip(self.board * -1, 0)
         arr[0, :, :, 0] = board == 1
         arr[0, :, :, 1] = board == -1
+        arr[0, :, :, 2] = np.array([
+            [1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1]
+        ], dtype=bool)
         return arr
 
     def __repr__(self) -> str:

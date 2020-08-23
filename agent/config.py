@@ -4,7 +4,7 @@ from .configbase import ConfigBase
 
 class Config(ConfigBase):
 
-    def __init__(self, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False, learning_rate=0.01):
+    def __init__(self, temperature=100.0, n_playout=300, c_puct=1.0, ignore_draw=False, learning_rate=0.003):
         self.model = ModelConfig(learning_rate)
         self.Qlearn = QLearnConfig()
         self.mcts = MCTSConfig(temperature, n_playout, c_puct, ignore_draw)
@@ -15,11 +15,11 @@ class Config(ConfigBase):
 class ModelConfig(ConfigBase):
 
     def __init__(self, learning_rate):
-        self.cnn_filter_num = 16
+        self.cnn_filter_num = 32
         self.cnn_filter_size = 3
-        self.res_layer_num = 1
-        self.l2_reg = 1e-4
-        self.value_fc_size = 256
+        self.res_layer_num = 3
+        self.l2_reg = 1e-5
+        self.value_fc_size = 1024
         self.learning_rate = learning_rate  # もっと小さいほうがいい?
 
 
@@ -58,4 +58,4 @@ class MCTSConfig(ConfigBase):
         self.n_playout = n_playout
         self.c_puct = c_puct
         self.ignore_draw = ignore_draw
-        self.tau = 2
+        self.tau = 3  # 選択回数 -> 着手率 の指数

@@ -6,11 +6,12 @@ from agent.config import Config
 
 model_config = None
 weight = None
-model_config = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.json"
-weight = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.h5"
+# model_config = "results/bekasa/2020-08-20-10-41/models/2020-08-20-14-23-57-mainNN.json"
+# weight = "results/bekasa/2020-08-20-10-41/models/2020-08-20-14-23-57-mainNN.h5"
 
 kifu_folders = []
-kifu_folders = ['results/bekasa/2020-08-18-04-14/kifu']
+kifu_folders = ['results/bekasa/2020-08-20-01-22/kifu',
+                'results/bekasa/2020-08-20-10-41/kifu']
 
 # paths = [    
 #     "results/bababax/kifu/2020-03-30-19-22-31.npz",

@@ -33,8 +33,8 @@ WEIGHT_PATH = "results/002_QLearn_guard/2020-02-20-20-17-50-mainQN.h5"
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-06-13-55-43-mainNN.h5"
 # MODEL_CONFIG_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.json" # lr=0.0001 3rd
 # WEIGHT_PATH_ZERO = "results/bababax/models/2020-04-07-12-29-07-mainNN.h5"
-MODEL_CONFIG_PATH_ZERO = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.json"
-WEIGHT_PATH_ZERO = "results/bekasa/2020-08-18-04-14/models/2020-08-18-13-08-25-mainNN.h5"
+MODEL_CONFIG_PATH_ZERO = "results/bekasa/2020-08-22-00-36/models/2020-08-22-15-32-59-mainNN.json"
+WEIGHT_PATH_ZERO = "results/bekasa/2020-08-22-00-36/models/2020-08-22-15-32-59-mainNN.h5"
 
 
 def start() -> None:
